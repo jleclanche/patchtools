@@ -1,7 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Blizzard Downloader torrent extractor
-# By Jerome Leclanche <adys.wh@gmail.com>
+"""
+Blizzard Downloader torrent extractor
+By Jerome Leclanche <adys.wh@gmail.com>
+"""
 
 import sys
 from bencode import decode_dict
