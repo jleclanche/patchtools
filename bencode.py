@@ -19,7 +19,7 @@ class BencodeException(Exception):
 
 
 class Bencached(object):
-	__slots__ = ['bencoded']
+	__slots__ = ["bencoded"]
 	
 	def __init__(self, s):
 		self.bencoded = s
@@ -28,7 +28,7 @@ def encode_bencached(x,r):
 	r.append(x.bencoded)
 
 def encode_int(x, r):
-	r.extend(('i', str(x), 'e'))
+	r.extend(("i", str(x), "e"))
 
 def encode_bool(x, r):
 	if x:
@@ -37,22 +37,22 @@ def encode_bool(x, r):
 		encode_int(0, r)
 
 def encode_string(x, r):
-	r.extend((str(len(x)), ':', x))
+	r.extend((str(len(x)), ":", x))
 
 def encode_list(x, r):
-	r.append('l')
+	r.append("l")
 	for i in x:
 		encode_func[type(i)](i, r)
-	r.append('e')
+	r.append("e")
 
 def encode_dict(x,r):
-	r.append('d')
+	r.append("d")
 	ilist = x.items()
 	ilist.sort()
 	for k, v in ilist:
-		r.extend((str(len(k)), ':', k))
+		r.extend((str(len(k)), ":", k))
 		encode_func[type(v)](v, r)
-	r.append('e')
+	r.append("e")
 
 encode_func = {
 	Bencached: encode_bencached,
@@ -70,7 +70,7 @@ encode_func = {
 def bencode(x):
 	r = []
 	encode_func[type(x)](x, r)
-	return ''.join(r)
+	return "".join(r)
 
 
 def decode_int(x, f):
