@@ -5,7 +5,6 @@ Blizzard Downloader torrent extractor
 By Jerome Leclanche <adys.wh@gmail.com>
 """
 
-import sys
 from bencode import decode_dict
 from re import sub
 
@@ -31,7 +30,10 @@ def extract(fname, out=""):
 	out.write(datafrom)
 	out.close()
 
-
-if __name__ == '__main__':
+def main():
+	import sys
 	fname = sys.argv[1]
 	extract(fname)
+
+if __name__ == "__main__":
+	main()
