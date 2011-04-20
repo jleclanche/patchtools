@@ -93,7 +93,7 @@ def decode_string(x, f):
 	return (x[colon:colon+n], colon+n)
 
 def decode_list(x, f):
-	r, f = [], f+1
+	r, f = [], f + 1
 	while x[f] != "e":
 		v, f = decode_func[x[f]](x, f)
 		r.append(v)
@@ -125,8 +125,8 @@ decode_func = {
 def bdecode(x):
 	try:
 		r, l = decode_func[x[0]](x, 0)
-	except (IndexError, KeyError, ValueError):
-		raise BencodeException("not a valid bencoded string")
+	except (IndexError, KeyError, ValueError), e:
+		raise BencodeException("not a valid bencoded string: %s" % (e))
 	if l != len(x):
 		raise BencodeException("invalid bencoded value (data after valid prefix)")
 	return r
