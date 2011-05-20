@@ -13,7 +13,9 @@ def runtests():
 	try:
 		files = os.listdir(DIR)
 	except OSError:
-		print "You need to create a 'tests' directory."
+		print "You need a readable 'tests' directory to run extractions on."
+		os.exit(1)
+	
 	for f in files:
 		out = "tmp_test_%i.torrent" % (randint(-maxint, maxint))
 		extract(DIR+f, out=out)
