@@ -18,7 +18,7 @@ servers = {
 
 class Downloader(object):
 	def __init__(self, *args):
-		arguments = ArgumentParser() # prog="patchdl"
+		arguments = ArgumentParser(prog="patchdl")
 		arguments.add_argument("-c", "--client", type=int, dest="client", default=LIVE, help="client version (1 for live, 2 for PTR)")
 		arguments.add_argument("-s", "--server", type=int, dest="server", default=LIVE, help="server version (1 for live, 2 for PTR)")
 		arguments.add_argument("--base", type=str, dest="base", default=os.path.join(os.environ.get("HOME"), "mpq"), help="Base directory for file storage")
