@@ -10,7 +10,6 @@ from xml.dom.minidom import getDOMImplementation, parseString
 
 LIVE = 1
 PTR  = 2
-LOCAL_BASE = os.path.join(os.environ.get("HOME"), "mpq")
 
 servers = {
 	LIVE: "http://enus.patch.battle.net:1119/patch",
@@ -22,6 +21,7 @@ class Downloader(object):
 		arguments = ArgumentParser() # prog="patchdl"
 		arguments.add_argument("-c", "--client", type=int, dest="client", default=LIVE, help="client version (1 for live, 2 for PTR)")
 		arguments.add_argument("-s", "--server", type=int, dest="server", default=LIVE, help="server version (1 for live, 2 for PTR)")
+		arguments.add_argument("--base", type=str, dest="base", default=os.path.join(os.environ.get("HOME"), "mpq"), help="Base directory for file storage")
 		arguments.add_argument("--debug", action="store_true", dest="debug", help="enable debug output")
 		arguments.add_argument("--component", type=str, dest="component", default="enUS", help="program component")
 		arguments.add_argument("--mfil", type=str, dest="mfil", help="Force a specific mfil url")
@@ -82,7 +82,7 @@ class Downloader(object):
 
 			i = 0
 			for file, fileInfo in mfil["file"].items():
-				path = os.path.join(LOCAL_BASE, program, baseDir, file)
+				path = os.path.join(self.args.base, program, baseDir, file)
 
 				if os.path.exists(path):
 					continue
