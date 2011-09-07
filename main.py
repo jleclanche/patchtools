@@ -2,11 +2,12 @@
 
 import os
 from argparse import ArgumentParser
-from bencode import decode_dict as parseTorrent
 from cStringIO import StringIO
-from pywow.mfil import MFIL2 as MFIL
 from urllib import urlopen
 from xml.dom.minidom import getDOMImplementation, parseString
+
+from bencode import decode_dict as parseTorrent
+from mfil import MFIL2 as MFIL
 
 LIVE = 1
 PTR  = 2
