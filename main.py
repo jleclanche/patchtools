@@ -88,7 +88,8 @@ class Downloader(object):
 
 			i = 0
 			for file, fileInfo in mfil["file"].items():
-				path = os.path.join(self.args.base, program, baseDir, file)
+				targetDir = os.path.join(self.args.base, program, baseDir)
+				path = os.path.join(targetDir, file)
 
 				if os.path.exists(path):
 					continue
