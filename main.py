@@ -86,8 +86,8 @@ class Downloader(object):
 
 			mfil = MFIL(urlopen(mfilUrl))
 
-			i = 0
 			dirs = set()
+			files = set()
 			for file, fileInfo in mfil["file"].items():
 				targetDir = os.path.join(self.args.base, program, baseDir)
 				if not os.path.exists(targetDir):
@@ -106,15 +106,18 @@ class Downloader(object):
 					if not self.args.avi:
 						continue
 
-				i += 1
-				print("wget %s/%s -O %s &&" % (directDownload, file, path))
+				files.add((file, path))
 				#print("%s/%s" % (directDownload, file))
 
 			if dirs:
 				for directory in dirs:
 					print("mkdir -p", directory)
 
-			if not i:
+			if files:
+				for file, path in files:
+					print("wget %s/%s -O %s &&" % (directDownload, file, path))
+				print("%i new files" % (len(files)))
+			else:
 				print("No new files")
 
 			return 0
