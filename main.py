@@ -74,7 +74,12 @@ class Downloader(object):
 			self.debug("mfilUrl=%r" % (mfilUrl))
 			self.debug("build=%r" % (build))
 
-			d, length = parseTorrent(urlopen(tfilUrl).read(), 0)
+			torrent = urlopen(tfilUrl).read()
+			if torrent == "File not found.":
+				print("File not found: %r" % (tfilUrl))
+				return 1
+
+			d, length = parseTorrent(torrent, 0)
 			directDownload = d["direct download"]
 			self.debug("directDownload=%r" % (directDownload))
 			baseDir = directDownload.split("/")[-1]
