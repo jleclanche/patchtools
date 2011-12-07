@@ -9,6 +9,7 @@ from xml.dom.minidom import getDOMImplementation, parseString
 from bencode import decode_dict as parseTorrent
 from mfil import MFIL2 as MFIL
 
+
 LIVE = 1
 PTR  = 2
 
@@ -26,6 +27,7 @@ class Downloader(object):
 		arguments.add_argument("--debug", action="store_true", dest="debug", help="enable debug output")
 		arguments.add_argument("--component", type=str, dest="component", default="enUS", help="program component")
 		arguments.add_argument("--mfil", type=str, dest="mfil", help="Force a specific mfil url")
+		arguments.add_argument("--tool", type=int, dest="tool", help="Tool version (if downloading tool patches)")
 		arguments.add_argument("--network", type=str, dest="network", default="akamai", help="Content Distribution Network (possible choices are akamai, att, limelight)")
 		arguments.add_argument("--show-avi", action="store_true", dest="avi", help="include .avi files in the output")
 		arguments.add_argument("program", type=str, nargs="?", default="WoW", help="possible choices are WoW, S2, D3")
@@ -36,10 +38,9 @@ class Downloader(object):
 			print(output)
 
 	def exec_(self):
-		program = self.args.program
-		component = self.args.component
+		xml = self.getProgramXML()
 		server = servers[self.args.server]
-		xml = self.getProgramXML(program, component, self.args.client)
+		program = self.args.program
 
 		self.debug("xml=%r" % (xml))
 
@@ -99,7 +100,6 @@ class Downloader(object):
 
 				if int(fileInfo["size"]) == 0:
 					# Directory
-					#print("mkdir -p %s" % (path))
 					continue
 
 				if file.endswith(".avi"):
@@ -131,7 +131,12 @@ class Downloader(object):
 					if server.getAttribute("id") == preferredServer:
 						return server.getAttribute("url")
 
-	def getProgramXML(self, program, component, version):
+	def getProgramXML(self):
+		program = self.args.program
+		component = self.args.component
+		clientVersion = self.args.client
+		tool = self.args.tool
+
 		dom = getDOMImplementation().createDocument(None, "version", None)
 		dom.documentElement.setAttribute("program", program)
 
@@ -144,8 +149,15 @@ class Downloader(object):
 		record = dom.createElement("record")
 		record.setAttribute("program", program)
 		record.setAttribute("component", component)
-		record.setAttribute("version", str(version))
+		record.setAttribute("version", str(clientVersion))
 		dom.documentElement.appendChild(record)
+
+		if tool is not None:
+			record = dom.createElement("record")
+			record.setAttribute("program", "Tool")
+			record.setAttribute("component", "Win")
+			record.setAttribute("version", str(tool))
+			dom.documentElement.appendChild(record)
 
 		return dom.documentElement.toxml()
 
