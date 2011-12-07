@@ -61,6 +61,11 @@ class Downloader(object):
 
 			base, thash, mhash, build = data.split(";")
 			self.debug("base=%r" % (base))
+
+			if serverProgram == "Tool":
+				print("<binary data at %s>" % (base))
+				continue
+
 			build = int(build)
 			baseUrl = self.getBaseUrl(base, program, self.args.network)
 			tfilUrl = baseUrl + "%s-%i-%s.torrent" % (program.lower(), build, thash)
@@ -118,10 +123,11 @@ class Downloader(object):
 			else:
 				print("No new files")
 
-			return 0
+		return 0
 
 	def getBaseUrl(self, base, product, preferredServer):
-		dom = parseString(urlopen(base).read())
+		response = urlopen(base).read()
+		dom = parseString(response)
 		assert dom.documentElement.tagName == "config"
 		for version in dom.getElementsByTagName("version"):
 			if version.getAttribute("product") == product:
