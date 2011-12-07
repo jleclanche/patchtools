@@ -13,16 +13,14 @@ from mfil import MFIL2 as MFIL
 LIVE = 1
 PTR  = 2
 
-servers = {
-	LIVE: "http://enus.patch.battle.net:1119/patch",
-	PTR:  "http://public-test.patch.battle.net:1119/patch",
-}
-
 class Downloader(object):
+
+	SERVER = "http://%s.patch.battle.net:1119/patch"
+
 	def __init__(self, *args):
 		arguments = ArgumentParser(prog="patchdl")
 		arguments.add_argument("-c", "--client", type=int, dest="client", default=LIVE, help="client version (1 for live, 2 for PTR)")
-		arguments.add_argument("-s", "--server", type=int, dest="server", default=LIVE, help="server version (1 for live, 2 for PTR)")
+		arguments.add_argument("-s", "--server", type=str, dest="server", default="enUS", help="server to connect to (locale xxXX or public-test)")
 		arguments.add_argument("--base", type=str, dest="base", default=os.path.join(os.environ.get("HOME"), "mpq"), help="Base directory for file storage")
 		arguments.add_argument("--debug", action="store_true", dest="debug", help="enable debug output")
 		arguments.add_argument("--component", type=str, dest="component", default="enUS", help="program component")
@@ -39,7 +37,7 @@ class Downloader(object):
 
 	def exec_(self):
 		xml = self.getProgramXML()
-		server = servers[self.args.server]
+		server = self.SERVER % (self.args.server)
 		program = self.args.program
 
 		self.debug("xml=%r" % (xml))
