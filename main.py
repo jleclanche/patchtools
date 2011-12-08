@@ -1,4 +1,21 @@
 #!/usr/bin/env python
+"""
+WoW Patches:
+	patchdl WoW
+WoW PTR (live-to-ptr):
+	patchdl WoW --server public-test
+WoW PTR (ptr-to-ptr):
+	patchdl WoW --server public-test --client 2
+
+D3:
+	patchdl D3 --server public-test
+
+S2:
+	patchdl S2 --component <os> --client <version>
+
+Tool:
+	patchdl --tool <version>
+"""
 
 import os
 from argparse import ArgumentParser
@@ -144,14 +161,15 @@ class Downloader(object):
 
 		return 0
 
-	def getBaseUrl(self, base, product, preferredServer):
+	def getBaseUrl(self, base, product, network):
 		response = urlopen(base).read()
 		dom = parseString(response)
 		assert dom.documentElement.tagName == "config"
 		for version in dom.getElementsByTagName("version"):
+			#self.debug("version=%s" % (version.toxml()))
 			if version.getAttribute("product") == product:
 				for server in version.getElementsByTagName("server"):
-					if server.getAttribute("id") == preferredServer:
+					if server.getAttribute("id") == network:
 						return server.getAttribute("url")
 
 	def getProgramXML(self):
