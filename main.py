@@ -28,6 +28,7 @@ class Downloader(object):
 		arguments.add_argument("--tool", type=int, dest="tool", help="Tool version (if downloading tool patches)")
 		arguments.add_argument("--network", type=str, dest="network", default="akamai", help="Content Distribution Network (possible choices are akamai, att, limelight)")
 		arguments.add_argument("--show-avi", action="store_true", dest="avi", help="include .avi files in the output")
+		arguments.add_argument("--post-data", type=str, dest="data", help="Send this data (emulates wget --post-data)")
 		arguments.add_argument("program", type=str, nargs="?", default="WoW", help="possible choices are WoW, S2, D3")
 		self.args = arguments.parse_args(*args)
 
@@ -51,6 +52,7 @@ class Downloader(object):
 		downloadTypes = {
 			"Bnet": self.downloadClassic,
 			"D3": self.downloadMfil,
+			"S2": self.downloadClassic,
 			"Tool": self.downloadClassic,
 			"WoW": self.downloadMfil,
 		}
@@ -69,7 +71,7 @@ class Downloader(object):
 		data = record.firstChild.data.strip()
 		self.debug("data=%r" % (data))
 
-		base, thash, mhash, build = data.split(";")
+		base, name, md5, build = data.split(";")
 		self.debug("base=%r" % (base))
 
 		print("<binary data at %s>" % (base))
@@ -153,6 +155,9 @@ class Downloader(object):
 						return server.getAttribute("url")
 
 	def getProgramXML(self):
+		if self.args.data:
+			return self.args.data
+
 		program = self.args.program
 		component = self.args.component
 		clientVersion = self.args.client
