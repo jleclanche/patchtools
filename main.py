@@ -48,22 +48,24 @@ class Downloader(object):
 			print("No response from %s" % (server))
 			return 1
 
+		downloadTypes = {
+			"Bnet": self.downloadClassic,
+			"D3": self.downloadMfil,
+			"Tool": self.downloadClassic,
+			"WoW": self.downloadMfil,
+		}
+
 		for record in parseString(response).getElementsByTagName("record"):
 			serverProgram = record.getAttribute("program")
 			print("%s::%s" % (serverProgram, record.getAttribute("component")))
 
-			if serverProgram == "Bnet":
-				print("Skipping...")
+			if serverProgram not in downloadTypes:
+				print("Don't know how to download.")
 				continue
 
-			elif serverProgram == "Tool":
-				# Launcher
-				self.downloadTool(record)
+			downloadTypes[serverProgram](record)
 
-			else:
-				self.downloadMfil(record)
-
-	def downloadTool(self, record):
+	def downloadClassic(self, record):
 		data = record.firstChild.data.strip()
 		self.debug("data=%r" % (data))
 
