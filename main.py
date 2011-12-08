@@ -38,7 +38,6 @@ class Downloader(object):
 	def exec_(self):
 		xml = self.getProgramXML()
 		server = self.SERVER % (self.args.server)
-		program = self.args.program
 
 		self.debug("xml=%r" % (xml))
 
@@ -51,77 +50,93 @@ class Downloader(object):
 
 		for record in parseString(response).getElementsByTagName("record"):
 			serverProgram = record.getAttribute("program")
-			if serverProgram == "Bnet":
-				continue
-
 			print("%s::%s" % (serverProgram, record.getAttribute("component")))
 
-			data = record.firstChild.data.strip()
-			self.debug("data=%r" % (data))
-
-			base, thash, mhash, build = data.split(";")
-			self.debug("base=%r" % (base))
-
-			if serverProgram == "Tool":
-				print("<binary data at %s>" % (base))
+			if serverProgram == "Bnet":
+				print("Skipping...")
 				continue
 
-			build = int(build)
-			baseUrl = self.getBaseUrl(base, program, self.args.network)
-			tfilUrl = baseUrl + "%s-%i-%s.torrent" % (program.lower(), build, thash)
-			if self.args.mfil:
-				mfilUrl = self.args.mfil
+			elif serverProgram == "Tool":
+				# Launcher
+				self.downloadTool(record)
+
 			else:
-				mfilUrl = baseUrl + "%s-%i-%s.mfil" % (program.lower(), build, mhash)
+				self.downloadMfil(record)
 
-			self.debug("tfilUrl=%r" % (tfilUrl))
-			self.debug("mfilUrl=%r" % (mfilUrl))
-			self.debug("build=%r" % (build))
+	def downloadTool(self, record):
+		data = record.firstChild.data.strip()
+		self.debug("data=%r" % (data))
 
-			torrent = urlopen(tfilUrl).read()
-			if torrent == "File not found.":
-				print("File not found: %r" % (tfilUrl))
-				return 1
+		base, thash, mhash, build = data.split(";")
+		self.debug("base=%r" % (base))
 
-			d, length = parseTorrent(torrent, 0)
-			directDownload = d["direct download"]
-			self.debug("directDownload=%r" % (directDownload))
-			baseDir = directDownload.split("/")[-1]
+		print("<binary data at %s>" % (base))
 
-			mfil = MFIL(urlopen(mfilUrl))
+	def downloadMfil(self, record):
+		program = self.args.program
 
-			dirs = set()
-			files = set()
-			for file, fileInfo in mfil["file"].items():
-				targetDir = os.path.join(self.args.base, program, baseDir)
-				if not os.path.exists(targetDir):
-					dirs.add(targetDir)
-				path = os.path.join(targetDir, file)
+		data = record.firstChild.data.strip()
+		self.debug("data=%r" % (data))
 
-				if os.path.exists(path):
+		base, thash, mhash, build = data.split(";")
+		self.debug("base=%r" % (base))
+
+		build = int(build)
+		baseUrl = self.getBaseUrl(base, program, self.args.network)
+		tfilUrl = baseUrl + "%s-%i-%s.torrent" % (program.lower(), build, thash)
+		if self.args.mfil:
+			mfilUrl = self.args.mfil
+		else:
+			mfilUrl = baseUrl + "%s-%i-%s.mfil" % (program.lower(), build, mhash)
+
+		self.debug("tfilUrl=%r" % (tfilUrl))
+		self.debug("mfilUrl=%r" % (mfilUrl))
+		self.debug("build=%r" % (build))
+
+		torrent = urlopen(tfilUrl).read()
+		if torrent == "File not found.":
+			print("File not found: %r" % (tfilUrl))
+			return 1
+
+		d, length = parseTorrent(torrent, 0)
+		directDownload = d["direct download"]
+		self.debug("directDownload=%r" % (directDownload))
+		baseDir = directDownload.split("/")[-1]
+
+		mfil = MFIL(urlopen(mfilUrl))
+
+		dirs = set()
+		files = set()
+		for file, fileInfo in mfil["file"].items():
+			targetDir = os.path.join(self.args.base, program, baseDir)
+			if not os.path.exists(targetDir):
+				dirs.add(targetDir)
+			path = os.path.join(targetDir, file)
+
+			if os.path.exists(path):
+				continue
+
+			if int(fileInfo["size"]) == 0:
+				# Directory
+				continue
+
+			if file.endswith(".avi"):
+				if not self.args.avi:
 					continue
 
-				if int(fileInfo["size"]) == 0:
-					# Directory
-					continue
+			files.add((file, path))
+			#print("%s/%s" % (directDownload, file))
 
-				if file.endswith(".avi"):
-					if not self.args.avi:
-						continue
+		if dirs:
+			for directory in dirs:
+				print("mkdir -p", directory)
 
-				files.add((file, path))
-				#print("%s/%s" % (directDownload, file))
-
-			if dirs:
-				for directory in dirs:
-					print("mkdir -p", directory)
-
-			if files:
-				for file, path in files:
-					print("wget %s/%s -O %s &&" % (directDownload, file, path))
-				print("%i new files" % (len(files)))
-			else:
-				print("No new files")
+		if files:
+			for file, path in files:
+				print("wget %s/%s -O %s &&" % (directDownload, file, path))
+			print("%i new files" % (len(files)))
+		else:
+			print("No new files")
 
 		return 0
 
