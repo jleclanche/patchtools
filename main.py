@@ -72,6 +72,7 @@ class Downloader(object):
 			"S2": self.downloadClassic,
 			"Tool": self.downloadClassic,
 			"WoW": self.downloadMfil,
+			"WoWT": self.downloadMfil,
 		}
 
 		for record in parseString(response).getElementsByTagName("record"):
