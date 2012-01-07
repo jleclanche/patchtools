@@ -135,7 +135,7 @@ class Downloader(object):
 			if os.path.exists(path):
 				continue
 
-			if int(fileInfo["size"]) == 0:
+			if isinstance(fileInfo["size"], basestring) and int(fileInfo["size"]) == 0:
 				# Directory
 				continue
 
