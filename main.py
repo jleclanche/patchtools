@@ -127,12 +127,9 @@ class Downloader(object):
 
 		mfil = MFIL(urlopen(mfilUrl))
 
-		dirs = set()
 		files = set()
 		for file, fileInfo in mfil["file"].items():
 			targetDir = os.path.join(self.args.base, program, baseDir)
-			if not os.path.exists(targetDir):
-				dirs.add(targetDir)
 			path = os.path.join(targetDir, file)
 
 			if os.path.exists(path):
@@ -148,10 +145,6 @@ class Downloader(object):
 
 			files.add((file, path))
 			#print("%s/%s" % (directDownload, file))
-
-		if dirs:
-			for directory in dirs:
-				print("mkdir -p", directory)
 
 		if files:
 			for file, path in files:
