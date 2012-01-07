@@ -123,7 +123,11 @@ class Downloader(object):
 		d, length = parseTorrent(torrent, 0)
 		directDownload = d["direct download"]
 		self.debug("directDownload=%r" % (directDownload))
-		baseDir = directDownload.split("/")[-1]
+		# Always make sure the url ends with a slash, so we don't
+		# get a different result depending on whether it does or not
+		if not directDownload.endswith("/"):
+			directDownload += "/"
+		baseDir = directDownload.split("/")[-2]
 
 		mfil = MFIL(urlopen(mfilUrl))
 
