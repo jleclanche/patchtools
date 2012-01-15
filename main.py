@@ -46,7 +46,7 @@ class Downloader(object):
 		arguments.add_argument("--network", type=str, dest="network", default="akamai", help="Content Distribution Network (possible choices are akamai, att, limelight)")
 		arguments.add_argument("--show-avi", action="store_true", dest="avi", help="include .avi files in the output")
 		arguments.add_argument("--post-data", type=str, dest="data", help="Send this data (emulates wget --post-data)")
-		arguments.add_argument("program", type=str, nargs="?", default="WoW", help="possible choices are WoW, S2, D3")
+		arguments.add_argument("program", type=str, nargs="?", default="WoW", help="possible choices are WoW, WoWB, WoWT, S2, D3")
 		self.args = arguments.parse_args(*args)
 
 	def debug(self, output):
@@ -72,6 +72,7 @@ class Downloader(object):
 			"S2": self.downloadClassic,
 			"Tool": self.downloadClassic,
 			"WoW": self.downloadMfil,
+			"WoWB": self.downloadMfil,
 			"WoWT": self.downloadMfil,
 		}
 
