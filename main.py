@@ -45,6 +45,7 @@ class Downloader(object):
 		arguments.add_argument("--tool", type=int, dest="tool", help="Tool version (if downloading tool patches)")
 		arguments.add_argument("--network", type=str, dest="network", default="akamai", help="Content Distribution Network (possible choices are akamai, att, limelight)")
 		arguments.add_argument("--show-avi", action="store_true", dest="avi", help="include .avi files in the output")
+		arguments.add_argument("--show-downloaded", action="store_true", dest="downloaded", help="include downloaded files in the output")
 		arguments.add_argument("--post-data", type=str, dest="data", help="Send this data (emulates wget --post-data)")
 		arguments.add_argument("program", type=str, nargs="?", default="WoW", help="possible choices are WoW, WoWB, WoWT, S2, D3, D3B")
 		self.args = arguments.parse_args(*args)
@@ -139,7 +140,8 @@ class Downloader(object):
 			path = os.path.join(targetDir, file)
 
 			if os.path.exists(path):
-				continue
+				if not self.args.downloaded:
+					continue
 
 			if isinstance(fileInfo["size"], basestring) and int(fileInfo["size"]) == 0:
 				# Directory
@@ -155,9 +157,7 @@ class Downloader(object):
 		if files:
 			for file, path in files:
 				print("curl -# --fail --create-dirs %s -o %s &&" % (directDownload + file, path))
-			print("%i new files" % (len(files)))
-		else:
-			print("No new files")
+			print("%i files" % (len(files)))
 
 		return 0
 
