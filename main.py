@@ -157,7 +157,7 @@ class Downloader(object):
 		if files:
 			for file, path in files:
 				print("curl -# --fail --create-dirs %s -o %s &&" % (directDownload + file, path))
-			print("%i files" % (len(files)))
+		print("%i files" % (len(files)))
 
 		return 0
 
