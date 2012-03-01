@@ -22,6 +22,7 @@ from argparse import ArgumentParser
 from cStringIO import StringIO
 from urllib import urlopen
 from xml.dom.minidom import getDOMImplementation, parseString
+from xml.parsers.expat import ExpatError
 
 from bencode import decode_dict as parseTorrent
 from mfil import MFIL2 as MFIL
@@ -108,6 +109,8 @@ class Downloader(object):
 
 		build = int(build)
 		baseUrl = self.getBaseUrl(base, program, self.args.network)
+		if not baseUrl:
+			return 1
 		tfilUrl = baseUrl + "%s-%i-%s.torrent" % (program.lower(), build, thash)
 		if self.args.mfil:
 			mfilUrl = self.args.mfil
@@ -163,7 +166,16 @@ class Downloader(object):
 
 	def getBaseUrl(self, base, product, network):
 		response = urlopen(base).read()
-		dom = parseString(response)
+		if response == "File not found.":
+			print("File not found: %r" % (base))
+			return
+
+		try:
+			dom = parseString(response)
+		except ExpatError, e:
+			print("Invalid XML in %r: %s" %(base, e))
+			return
+
 		assert dom.documentElement.tagName == "config"
 		for version in dom.getElementsByTagName("version"):
 			#self.debug("version=%s" % (version.toxml()))
