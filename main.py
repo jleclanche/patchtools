@@ -158,8 +158,6 @@ class Downloader(object):
 		# get a different result depending on whether it does or not
 		if not directDownload.endswith("/"):
 			directDownload += "/"
-		baseDir = directDownload.split("/")[-2]
-		targetDir = os.path.join(self.args.base, program, baseDir)
 
 		mfil = MFIL(urlopen(mfilUrl))
 
@@ -173,19 +171,7 @@ class Downloader(object):
 			files.add(file)
 			#print("%s/%s" % (directDownload, file))
 
-		if files:
-			for file in files:
-				path = os.path.join(targetDir, file)
-				if os.path.exists(path):
-					if not self.args.downloaded:
-						continue
-
-				if file.endswith(".avi"):
-					if not self.args.avi:
-						continue
-
-				print("curl -# --fail --create-dirs %s -o %s &&" % (directDownload + file, path))
-		print("%i files" % (len(files)))
+		self.outputFiles(files, directDownload)
 
 		return 0
 
@@ -241,6 +227,23 @@ class Downloader(object):
 			dom.documentElement.appendChild(record)
 
 		return dom.documentElement.toxml()
+
+	def outputFiles(self, files, baseUrl):
+		baseDir = baseUrl.split("/")[-2]
+		targetDir = os.path.join(self.args.base, self.args.program, baseDir)
+		if files:
+			for file in files:
+				path = os.path.join(targetDir, file)
+				if os.path.exists(path):
+					if not self.args.downloaded:
+						continue
+
+				if file.endswith(".avi"):
+					if not self.args.avi:
+						continue
+
+				print("curl -# --fail --create-dirs %s -o %s &&" % (baseUrl + file, path))
+		print("%i files" % (len(files)))
 
 def main():
 	import sys
