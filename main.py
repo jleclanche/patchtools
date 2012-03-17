@@ -103,6 +103,7 @@ class Downloader(object):
 
 		incrementalTorrent, fullTorrent, toBuild, fromBuild, zero = data.split(";")
 
+		files = set()
 		for url in (incrementalTorrent, fullTorrent):
 			torrent = urlopen(url).read()
 			if torrent == "File not found.":
@@ -117,7 +118,9 @@ class Downloader(object):
 				directDownload += "/"
 
 			for f in d["info"]["files"]:
-				print(directDownload + "/".join(f["path"]))
+				files.add("/".join(f["path"]))
+
+		self.outputFiles(files, directDownload)
 
 	def downloadClassic(self, record):
 		data = record.firstChild.data.strip()
