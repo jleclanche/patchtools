@@ -91,7 +91,11 @@ class Downloader(object):
 				print("Don't know how to download.")
 				continue
 
-			downloadTypes[serverProgram](record)
+			try:
+				downloadTypes[serverProgram](record)
+			except ServerError, e:
+				print("Error: %s" % (e))
+				continue
 
 	def downloadAgent(self, record):
 		data = record.firstChild.data.strip()
