@@ -20,7 +20,7 @@ class BencodeException(Exception):
 
 class Bencached(object):
 	__slots__ = ["bencoded"]
-
+	
 	def __init__(self, s):
 		self.bencoded = s
 
@@ -47,7 +47,7 @@ def encode_list(x, r):
 
 def encode_dict(x,r):
 	r.append("d")
-	ilist = list(x.items())
+	ilist = x.items()
 	ilist.sort()
 	for k, v in ilist:
 		r.extend((str(len(k)), ":", k))
@@ -59,12 +59,12 @@ encode_func = {
 	bool: encode_bool,
 	dict: encode_dict,
 	int: encode_int,
-	#long: encode_int,
+	long: encode_int,
 	list: encode_list,
 	set: encode_list,
 	tuple: encode_list,
 	str: encode_string,
-	#unicode: encode_string,
+	unicode: encode_string,
 }
 
 def bencode(x):
@@ -93,7 +93,7 @@ def decode_string(x, f):
 	return (x[colon:colon+n], colon+n)
 
 def decode_list(x, f):
-	r, f = [], f+1
+	r, f = [], f + 1
 	while x[f] != "e":
 		v, f = decode_func[x[f]](x, f)
 		r.append(v)
@@ -125,8 +125,8 @@ decode_func = {
 def bdecode(x):
 	try:
 		r, l = decode_func[x[0]](x, 0)
-	except (IndexError, KeyError, ValueError):
-		raise BencodeException("not a valid bencoded string")
+	except (IndexError, KeyError, ValueError), e:
+		raise BencodeException("not a valid bencoded string: %s" % (e))
 	if l != len(x):
 		raise BencodeException("invalid bencoded value (data after valid prefix)")
 	return r
