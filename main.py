@@ -31,6 +31,9 @@ from mfil import MFIL2 as MFIL
 LIVE = 1
 PTR  = 2
 
+class ServerError(Exception):
+	pass
+
 class Downloader(object):
 
 	SERVER = "http://%s.patch.battle.net:1119/patch"
@@ -65,8 +68,7 @@ class Downloader(object):
 
 		response = f.read()
 		if not response:
-			print("No response from %s" % (server))
-			return 1
+			raise ServerError("No response from %s" % (server))
 
 		downloadTypes = {
 			"Agnt": self.downloadAgent,
@@ -100,8 +102,7 @@ class Downloader(object):
 		for url in (incrementalTorrent, fullTorrent):
 			torrent = urlopen(url).read()
 			if torrent == "File not found.":
-				print("File not found: %r" % (tfilUrl))
-				return 1
+				raise ServerError("File not found: %r" % (tfilUrl))
 
 			d, length = parseTorrent(torrent, 0)
 			directDownload = d["direct download"]
@@ -134,8 +135,6 @@ class Downloader(object):
 
 		build = int(build)
 		baseUrl = self.getBaseUrl(base, program, self.args.network)
-		if not baseUrl:
-			return 1
 		tfilUrl = baseUrl + "%s-%i-%s.torrent" % (program.lower(), build, thash)
 		if self.args.mfil:
 			mfilUrl = self.args.mfil
@@ -148,8 +147,7 @@ class Downloader(object):
 
 		torrent = urlopen(tfilUrl).read()
 		if torrent == "File not found.":
-			print("File not found: %r" % (tfilUrl))
-			return 1
+			raise ServerError("File not found: %r" % (tfilUrl))
 
 		d, length = parseTorrent(torrent, 0)
 		directDownload = d["direct download"]
@@ -173,19 +171,15 @@ class Downloader(object):
 
 		self.outputFiles(files, directDownload)
 
-		return 0
-
 	def getBaseUrl(self, base, product, network):
 		response = urlopen(base).read()
 		if response == "File not found.":
-			print("File not found: %r" % (base))
-			return
+			raise ServerError("File not found: %r" % (base))
 
 		try:
 			dom = parseString(response)
 		except ExpatError, e:
-			print("Invalid XML in %r: %s" %(base, e))
-			return
+			raise ServerError("Invalid XML in %r: %s" %(base, e))
 
 		assert dom.documentElement.tagName == "config"
 		for version in dom.getElementsByTagName("version"):
@@ -194,6 +188,8 @@ class Downloader(object):
 				for server in version.getElementsByTagName("server"):
 					if server.getAttribute("id") == network:
 						return server.getAttribute("url")
+
+		raise ServerError("Could not find a base url for %r" % (base))
 
 	def getProgramXML(self):
 		if self.args.data:
