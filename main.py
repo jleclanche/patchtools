@@ -159,31 +159,31 @@ class Downloader(object):
 		if not directDownload.endswith("/"):
 			directDownload += "/"
 		baseDir = directDownload.split("/")[-2]
+		targetDir = os.path.join(self.args.base, program, baseDir)
 
 		mfil = MFIL(urlopen(mfilUrl))
 
 		files = set()
 		for file, fileInfo in mfil["file"].items():
-			targetDir = os.path.join(self.args.base, program, baseDir)
-			path = os.path.join(targetDir, file)
-
-			if os.path.exists(path):
-				if not self.args.downloaded:
-					continue
 
 			if isinstance(fileInfo["size"], basestring) and int(fileInfo["size"]) == 0:
 				# Directory
 				continue
 
-			if file.endswith(".avi"):
-				if not self.args.avi:
-					continue
-
-			files.add((file, path))
+			files.add(file)
 			#print("%s/%s" % (directDownload, file))
 
 		if files:
-			for file, path in files:
+			for file in files:
+				path = os.path.join(targetDir, file)
+				if os.path.exists(path):
+					if not self.args.downloaded:
+						continue
+
+				if file.endswith(".avi"):
+					if not self.args.avi:
+						continue
+
 				print("curl -# --fail --create-dirs %s -o %s &&" % (directDownload + file, path))
 		print("%i files" % (len(files)))
 
