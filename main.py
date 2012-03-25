@@ -18,6 +18,7 @@ Tool:
 """
 
 import os
+import sys
 from argparse import ArgumentParser
 from cStringIO import StringIO
 from urllib import urlopen
@@ -57,6 +58,9 @@ class Downloader(object):
 	def debug(self, output):
 		if self.args.debug:
 			print(output)
+
+	def warn(self, output):
+		sys.stderr.write("Error: %s\n" % (output))
 
 	def exec_(self):
 		xml = self.getProgramXML()
@@ -249,8 +253,6 @@ class Downloader(object):
 		print("%i files" % (len(files)))
 
 def main():
-	import sys
-
 	app = Downloader(sys.argv[1:])
 	exit(app.exec_())
 
