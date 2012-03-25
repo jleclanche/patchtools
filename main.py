@@ -193,14 +193,23 @@ class Downloader(object):
 			raise ServerError("Invalid XML in %r: %s" %(base, e))
 
 		assert dom.documentElement.tagName == "config"
-		for version in dom.getElementsByTagName("version"):
-			#self.debug("version=%s" % (version.toxml()))
-			if version.getAttribute("product") == product:
-				for server in version.getElementsByTagName("server"):
-					if server.getAttribute("id") == network:
-						return server.getAttribute("url")
+		def getServer(dom, product, network=None):
+			for version in dom.getElementsByTagName("version"):
+				#self.debug("version=%s" % (version.toxml()))
+				if version.getAttribute("product") == product:
+					for server in version.getElementsByTagName("server"):
+						if not network or server.getAttribute("id") == network:
+							return server.getAttribute("url")
 
-		raise ServerError("Could not find a base url for %r" % (base))
+		ret = getServer(dom, product, network)
+		if not ret:
+			self.warn("Could not find a base url for %r with %r as preferred network. Trying with all networks." % (base, network))
+
+		ret = getServer(dom, product)
+		if not ret:
+			raise ServerError("Could not find a base url for %r" % (base))
+
+		return ret
 
 	def getProgramXML(self):
 		if self.args.data:
