@@ -71,7 +71,7 @@ class Downloader(object):
 		print("error: %s" % (output))
 
 	def warn(self, output):
-		sys.stderr.write("Error: %s\n" % (output))
+		sys.stderr.write("warning: %s\n" % (output))
 
 	def exec_(self):
 		xml = self.getProgramXML()
