@@ -20,12 +20,19 @@ Tool:
 import os
 import sys
 from argparse import ArgumentParser
-from cStringIO import StringIO
-from urllib import urlopen
+try:
+	from io import StringIO
+except ImportError:
+	from cStringIO import StringIO
+try:
+	from urllib.request import urlopen
+except ImportError:
+	from urllib import urlopen
+
 from xml.dom.minidom import getDOMImplementation, parseString
 from xml.parsers.expat import ExpatError
 
-from bencode import decode_dict as parseTorrent
+from bencode import _decode_dict as parseTorrent
 from mfil import MFIL2 as MFIL
 
 
@@ -43,7 +50,7 @@ class Downloader(object):
 		arguments = ArgumentParser(prog="patchdl")
 		arguments.add_argument("-c", "--client", type=int, dest="client", default=LIVE, help="client version (1 for live, 2 for PTR)")
 		arguments.add_argument("-s", "--server", type=str, dest="server", default="enUS", help="server to connect to (locale xxXX or public-test)")
-		arguments.add_argument("--base", type=str, dest="base", default=os.path.join(os.environ.get("HOME"), "mpq"), help="Base directory for file storage")
+		arguments.add_argument("--base", type=str, dest="base", default=os.path.join(os.environ.get("HOME"), help="Base directory for file storage")
 		arguments.add_argument("--debug", action="store_true", dest="debug", help="enable debug output")
 		arguments.add_argument("--component", type=str, dest="component", default="enUS", help="program component")
 		arguments.add_argument("--mfil", type=str, dest="mfil", help="Force a specific mfil url")
@@ -58,6 +65,9 @@ class Downloader(object):
 	def debug(self, output):
 		if self.args.debug:
 			print(output)
+
+	def error(self, output):
+		print("error: %s" % (output))
 
 	def warn(self, output):
 		sys.stderr.write("Error: %s\n" % (output))
@@ -92,13 +102,13 @@ class Downloader(object):
 			print("%s::%s" % (serverProgram, record.getAttribute("component")))
 
 			if serverProgram not in downloadTypes:
-				print("Don't know how to download.")
+				self.error("Don't know how to download.")
 				continue
 
 			try:
 				downloadTypes[serverProgram](record)
-			except ServerError, e:
-				print("Error: %s" % (e))
+			except ServerError as e:
+				self.error("Error: %s" % (e))
 				continue
 
 	def downloadAgent(self, record):
@@ -113,7 +123,7 @@ class Downloader(object):
 			if torrent == "File not found.":
 				raise ServerError("File not found: %r" % (tfilUrl))
 
-			d, length = parseTorrent(torrent, 0)
+			d, length = parseTorrent(torrent)
 			directDownload = d["direct download"]
 			self.debug("directDownload=%r" % (directDownload))
 			# Always make sure the url ends with a slash, so we don't
@@ -160,8 +170,8 @@ class Downloader(object):
 		if torrent == "File not found.":
 			raise ServerError("File not found: %r" % (tfilUrl))
 
-		d, length = parseTorrent(torrent, 0)
-		directDownload = d["direct download"]
+		d, length = parseTorrent(torrent)
+		directDownload = d[b"direct download"].decode("utf-8")
 		self.debug("directDownload=%r" % (directDownload))
 		# Always make sure the url ends with a slash, so we don't
 		# get a different result depending on whether it does or not
@@ -173,12 +183,11 @@ class Downloader(object):
 		files = set()
 		for file, fileInfo in mfil["file"].items():
 
-			if isinstance(fileInfo["size"], basestring) and int(fileInfo["size"]) == 0:
+			if isinstance(fileInfo["size"], str) and int(fileInfo["size"]) == 0:
 				# Directory
 				continue
 
 			files.add(file)
-			#print("%s/%s" % (directDownload, file))
 
 		self.outputFiles(files, directDownload)
 
@@ -189,7 +198,7 @@ class Downloader(object):
 
 		try:
 			dom = parseString(response)
-		except ExpatError, e:
+		except ExpatError as e:
 			raise ServerError("Invalid XML in %r: %s" %(base, e))
 
 		assert dom.documentElement.tagName == "config"
@@ -242,7 +251,7 @@ class Downloader(object):
 			record.setAttribute("version", str(tool))
 			dom.documentElement.appendChild(record)
 
-		return dom.documentElement.toxml()
+		return dom.documentElement.toxml("utf-8")
 
 	def outputFiles(self, files, baseUrl):
 		baseDir = baseUrl.split("/")[-2]
