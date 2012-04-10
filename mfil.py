@@ -27,10 +27,11 @@ class MFIL(object):
 	"""
 
 	def __init__(self, file):
-		if isinstance(file, basestring):
+		if isinstance(file, str):
 			file = open(file, "r")
 		self.file = file
 		key, value = self.parseKey(), self.parseValue()
+		print(repr(key), type(key), repr(value), type(value))
 		if key == "version":
 			self.version = value
 		else:
@@ -41,7 +42,7 @@ class MFIL(object):
 
 	def parseKey(self):
 		ret = []
-		self.nextLine = self.file.readline()
+		self.nextLine = self.file.readline().decode("utf-8")
 		for c in self.nextLine:
 			if c == "=":
 				self.nextLine = self.nextLine[len(ret)+1:]
