@@ -270,20 +270,21 @@ class Downloader(object):
 						self.debug("disksize=%r, filesize=%r" % (disksize, filesize))
 						if disksize != filesize:
 							self.error("Size mismatch: %r (Expected %r, got %r)" % (path, filesize, disksize))
-						else:
-							continue
+							output.append("curl -# --fail --create-dirs %s -o %s" % (baseUrl + file, path))
+
+						continue
 
 					elif not self.args.downloaded:
 						continue
 
 				if file.endswith(".avi"):
-					if not self.args.avi:
+					if not self.args.avi and not self.args.checksizes:
 						continue
 
 				output.append("curl -# --fail --create-dirs %s -o %s" % (baseUrl + file, path))
 				total += 1
 
-		print("&&\n".join(output))
+		print(" &&\n".join(output))
 		print("%i/%i files" % (total, len(files)))
 
 def main():
