@@ -52,6 +52,7 @@ class Downloader(object):
 		arguments.add_argument("-c", "--client", type=int, dest="client", default=LIVE, help="client version (1 for live, 2 for PTR)")
 		arguments.add_argument("-s", "--server", type=str, dest="server", default="enUS", help="server to connect to (locale xxXX or public-test)")
 		arguments.add_argument("--base", type=str, dest="base", default=MPQ_BASE_DIR, help="Base directory for file storage")
+		arguments.add_argument("--check-sizes", action="store_true", dest="checksizes", help="Check all downloaded files against their respective sizes. Not available for all downloads.")
 		arguments.add_argument("--debug", action="store_true", dest="debug", help="enable debug output")
 		arguments.add_argument("--component", type=str, dest="component", default="enUS", help="program component")
 		arguments.add_argument("--mfil", type=str, dest="mfil", help="Force a specific mfil url")
@@ -190,7 +191,7 @@ class Downloader(object):
 
 			files.add(file)
 
-		self.outputFiles(files, directDownload)
+		self.outputFiles(files, directDownload, mfil["file"])
 
 	def getBaseUrl(self, base, product, network):
 		response = urlopen(base).read()
@@ -254,7 +255,7 @@ class Downloader(object):
 
 		return dom.documentElement.toxml("utf-8")
 
-	def outputFiles(self, files, baseUrl):
+	def outputFiles(self, files, baseUrl, mfil):
 		baseDir = baseUrl.split("/")[-2]
 		targetDir = os.path.join(self.args.base, self.args.program, baseDir)
 		total = 0
@@ -262,7 +263,16 @@ class Downloader(object):
 			for file in files:
 				path = os.path.join(targetDir, file)
 				if os.path.exists(path):
-					if not self.args.downloaded:
+					if self.args.checksizes:
+						disksize = os.path.getsize(path)
+						filesize = int(mfil[file]["size"])
+						self.debug("disksize=%r, filesize=%r" % (disksize, filesize))
+						if disksize != filesize:
+							self.error("Size mismatch: %r (Expected %r, got %r)" % (path, filesize, disksize))
+						else:
+							continue
+
+					elif not self.args.downloaded:
 						continue
 
 				if file.endswith(".avi"):
