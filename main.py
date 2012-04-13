@@ -257,6 +257,7 @@ class Downloader(object):
 	def outputFiles(self, files, baseUrl):
 		baseDir = baseUrl.split("/")[-2]
 		targetDir = os.path.join(self.args.base, self.args.program, baseDir)
+		total = 0
 		if files:
 			for file in files:
 				path = os.path.join(targetDir, file)
@@ -269,7 +270,8 @@ class Downloader(object):
 						continue
 
 				print("curl -# --fail --create-dirs %s -o %s &&" % (baseUrl + file, path))
-		print("%i files" % (len(files)))
+				total += 1
+		print("%i/%i files" % (total, len(files)))
 
 def main():
 	app = Downloader(sys.argv[1:])
