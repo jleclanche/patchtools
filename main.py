@@ -259,6 +259,7 @@ class Downloader(object):
 		baseDir = baseUrl.split("/")[-2]
 		targetDir = os.path.join(self.args.base, self.args.program, baseDir)
 		total = 0
+		output = []
 		if files:
 			for file in files:
 				path = os.path.join(targetDir, file)
@@ -279,8 +280,10 @@ class Downloader(object):
 					if not self.args.avi:
 						continue
 
-				print("curl -# --fail --create-dirs %s -o %s &&" % (baseUrl + file, path))
+				output.append("curl -# --fail --create-dirs %s -o %s" % (baseUrl + file, path))
 				total += 1
+
+		print("&&\n".join(output))
 		print("%i/%i files" % (total, len(files)))
 
 def main():
