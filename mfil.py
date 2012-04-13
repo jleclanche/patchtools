@@ -31,7 +31,6 @@ class MFIL(object):
 			file = open(file, "r")
 		self.file = file
 		key, value = self.parseKey(), self.parseValue()
-		print(repr(key), type(key), repr(value), type(value))
 		if key == "version":
 			self.version = value
 		else:
