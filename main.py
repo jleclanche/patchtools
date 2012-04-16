@@ -21,10 +21,6 @@ import os
 import sys
 from argparse import ArgumentParser
 try:
-	from io import StringIO
-except ImportError:
-	from cStringIO import StringIO
-try:
 	from urllib.request import urlopen
 except ImportError:
 	from urllib import urlopen
