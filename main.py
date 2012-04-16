@@ -38,7 +38,7 @@ from mfil import MFIL2 as MFIL
 
 LIVE = 1
 PTR  = 2
-MPQ_BASE_DIR = os.environ.get("MPQ_BASE_DIR", os.path.join(os.path.expanduser("~"), "mpq", "WoW"))
+MPQ_BASE_DIR = os.environ.get("MPQ_BASE_DIR", os.path.join(os.path.expanduser("~"), "mpq"))
 
 class ServerError(Exception):
 	pass
