@@ -28,6 +28,7 @@ try:
 	from urllib.request import urlopen
 except ImportError:
 	from urllib import urlopen
+from urllib.error import HTTPError
 
 from xml.dom.minidom import getDOMImplementation, parseString
 from xml.parsers.expat import ExpatError
@@ -80,7 +81,10 @@ class Downloader(object):
 
 		self.debug("xml=%r" % (xml))
 
-		f = urlopen(server, xml)
+		try:
+			f = urlopen(server, xml)
+		except HTTPError as e:
+			raise ServerError("Could not open %s: %s" % (server, e))
 
 		response = f.read()
 		if not response:
@@ -110,7 +114,7 @@ class Downloader(object):
 			try:
 				downloadTypes[serverProgram](record)
 			except ServerError as e:
-				self.error("Error: %s" % (e))
+				self.error(e)
 				continue
 
 	def downloadAgent(self, record):
@@ -168,7 +172,11 @@ class Downloader(object):
 		self.debug("mfilUrl=%r" % (mfilUrl))
 		self.debug("build=%r" % (build))
 
-		torrent = urlopen(tfilUrl).read()
+		try:
+			torrent = urlopen(tfilUrl).read()
+		except HTTPError as e:
+			raise ServerError("Could not open %s: %s" % (tfilUrl, e))
+
 		if torrent == "File not found.":
 			raise ServerError("File not found: %r" % (tfilUrl))
 
