@@ -80,11 +80,13 @@ class Downloader(object):
 		try:
 			f = urlopen(server, xml)
 		except HTTPError as e:
-			raise ServerError("Could not open %s: %s" % (server, e))
+			self.error("Could not open %s: %s" % (server, e))
+			return 1
 
 		response = f.read()
 		if not response:
-			raise ServerError("No response from %s" % (server))
+			self.error("No response from %s" % (server))
+			return 1
 
 		downloadTypes = {
 			"Agnt": self.downloadAgent,
@@ -112,6 +114,8 @@ class Downloader(object):
 			except ServerError as e:
 				self.error(e)
 				continue
+
+		return 0
 
 	def downloadAgent(self, record):
 		data = record.firstChild.data.strip()
@@ -158,6 +162,7 @@ class Downloader(object):
 
 		build = int(build)
 		baseUrl = self.getBaseUrl(base, program, self.args.network)
+		self.debug("baseUrl=%r" % (baseUrl))
 		tfilUrl = baseUrl + "%s-%i-%s.torrent" % (program.lower(), build, thash)
 		if self.args.mfil:
 			mfilUrl = self.args.mfil
