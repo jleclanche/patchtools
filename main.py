@@ -22,9 +22,9 @@ import sys
 from argparse import ArgumentParser
 try:
 	from urllib.request import urlopen
+	from urllib.error import HTTPError
 except ImportError:
 	from urllib import urlopen
-from urllib.error import HTTPError
 
 from xml.dom.minidom import getDOMImplementation, parseString
 from xml.parsers.expat import ExpatError
