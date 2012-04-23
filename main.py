@@ -203,7 +203,10 @@ class Downloader(object):
 		self.outputFiles(files, directDownload, mfil["file"])
 
 	def getBaseUrl(self, base, product, network):
-		response = urlopen(base).read()
+		try:
+			response = urlopen(base).read()
+		except HTTPError as e:
+			raise ServerError("%s: %r" % (e, base))
 		if response == "File not found.":
 			raise ServerError("File not found: %r" % (base))
 
