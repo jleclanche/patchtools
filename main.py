@@ -95,6 +95,7 @@ class Downloader(object):
 			"D3": self.downloadMfil,
 			"D3B": self.downloadMfil,
 			"S2": self.downloadClassic,
+			"S2B": self.downloadMfil,
 			"Tool": self.downloadClassic,
 			"WoW": self.downloadMfil,
 			"WoWB": self.downloadMfil,
