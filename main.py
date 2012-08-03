@@ -24,7 +24,7 @@ try:
 	from urllib.request import urlopen
 	from urllib.error import HTTPError
 except ImportError:
-	from urllib import urlopen
+	from urllib2 import urlopen, HTTPError
 
 from xml.dom.minidom import getDOMImplementation, parseString
 from xml.parsers.expat import ExpatError
