@@ -39,6 +39,10 @@ class ServerError(Exception):
 	pass
 
 class Cache(object):
+	"""
+	Simple caching mechanism that assumes file integrity by file name.
+	Only useful for mfil/tfils as those have file hashes in the file name.
+	"""
 	def __init__(self, program):
 		HOME = os.path.expanduser("~")
 		XDG_CACHE_HOME  = os.environ.get("XDG_CACHE_HOME", os.path.join(HOME, ".cache"))
@@ -49,18 +53,18 @@ class Cache(object):
 		if not os.path.exists(dir):
 			os.makedirs(dir)
 
-	def _hash(self, item):
-		return os.path.join(str(hash(item)), os.path.split(item)[-1])
+	def _path(self, item):
+		path = os.path.join(self.path, os.path.basename(item))
+		self._makedirs(os.path.dirname(path))
+		return path
 
 	def get(self, item):
-		path = os.path.join(self.path, self._hash(item))
-		self._makedirs(os.path.dirname(path))
+		path = self._path(item)
 		if os.path.exists(path):
 			return path
 
 	def set(self, item, data):
-		path = os.path.join(self.path, self._hash(item))
-		self._makedirs(os.path.dirname(path))
+		path = self._path(item)
 		with open(path, "wb") as f:
 			f.write(data)
 
