@@ -30,6 +30,7 @@ from bencode import _decode_dict as parseTorrent
 from mfil import MFIL2 as MFIL
 
 
+PROGRAM = "patchdl"
 LIVE = 1
 PTR  = 2
 MPQ_BASE_DIR = os.environ.get("MPQ_BASE_DIR", os.path.join(os.path.expanduser("~"), "mpq"))
@@ -37,12 +38,33 @@ MPQ_BASE_DIR = os.environ.get("MPQ_BASE_DIR", os.path.join(os.path.expanduser("~
 class ServerError(Exception):
 	pass
 
+class Cache(object):
+	def __init__(self, program):
+		HOME = os.path.expanduser("~")
+		XDG_CACHE_HOME  = os.environ.get("XDG_CACHE_HOME", os.path.join(HOME, ".cache"))
+		self.path = os.path.join(XDG_CACHE_HOME, program)
+		if not os.path.exists(self.path):
+			os.makedirs(self.path)
+
+	def _hash(self, item):
+		return "-".join((str(hash(item)), os.path.split(item)[-1]))
+
+	def get(self, item):
+		path = os.path.join(self.path, self._hash(item))
+		if os.path.exists(path):
+			return path
+
+	def set(self, item, data):
+		path = os.path.join(self.path, self._hash(item))
+		with open(path, "wb") as f:
+			f.write(data)
+
 class Downloader(object):
 
 	SERVER = "http://%s.patch.battle.net:1119/patch"
 
 	def __init__(self, *args):
-		arguments = ArgumentParser(prog="patchdl")
+		arguments = ArgumentParser(prog=PROGRAM)
 		arguments.add_argument("-c", "--client", type=int, dest="client", default=LIVE, help="client version (1 for live, 2 for PTR)")
 		arguments.add_argument("-s", "--server", type=str, dest="server", default="enUS", help="server to connect to (locale xxXX or public-test)")
 		arguments.add_argument("--base", type=str, dest="base", default=MPQ_BASE_DIR, help="Base directory for file storage")
@@ -57,6 +79,8 @@ class Downloader(object):
 		arguments.add_argument("--post-data", type=str, dest="data", help="Send this data (emulates wget --post-data)")
 		arguments.add_argument("program", type=str, nargs="?", default="WoW", help="possible choices are WoW, WoWB, WoWT, S2, D3, D3B, Agnt, Clnt")
 		self.args = arguments.parse_args(*args)
+
+		self.cache = Cache(PROGRAM)
 
 	def debug(self, output):
 		if self.args.debug:
@@ -171,14 +195,24 @@ class Downloader(object):
 		self.debug("mfilUrl=%r" % (mfilUrl))
 		self.debug("build=%r" % (build))
 
-		try:
-			torrent = urlopen(tfilUrl).read()
-		except HTTPError as e:
-			raise ServerError("Could not open %s: %s" % (tfilUrl, e))
+		torrent = self.cache.get(tfilUrl)
+		if torrent:
+			self.debug("cache hit: torrent=%r" % (torrent))
+			torrent = open(torrent, "rb").read()
+		else:
+			self.debug("Downloading torrent file...")
+			try:
+				torrent = urlopen(tfilUrl).read()
+			except HTTPError as e:
+				raise ServerError("Could not open %s: %s" % (tfilUrl, e))
 
-		if torrent == "File not found.":
-			raise ServerError("File not found: %r" % (tfilUrl))
+			if torrent == "File not found.":
+				raise ServerError("File not found: %r" % (tfilUrl))
 
+			self.debug("Setting cache for tfilUrl=%r, torrent length=%r bytes" % (tfilUrl, len(torrent)))
+			self.cache.set(tfilUrl, torrent)
+
+		self.debug("Parsing torrent...")
 		d, length = parseTorrent(torrent)
 		directDownload = d[b"direct download"].decode("utf-8")
 		self.debug("directDownload=%r" % (directDownload))
