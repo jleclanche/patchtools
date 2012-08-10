@@ -43,21 +43,28 @@ class Cache(object):
 		HOME = os.path.expanduser("~")
 		XDG_CACHE_HOME  = os.environ.get("XDG_CACHE_HOME", os.path.join(HOME, ".cache"))
 		self.path = os.path.join(XDG_CACHE_HOME, program)
-		if not os.path.exists(self.path):
-			os.makedirs(self.path)
+		self._makedirs(self.path)
+
+	def _makedirs(self, dir):
+		if not os.path.exists(dir):
+			os.makedirs(dir)
 
 	def _hash(self, item):
-		return "-".join((str(hash(item)), os.path.split(item)[-1]))
+		return os.path.join(str(hash(item)), os.path.split(item)[-1])
 
 	def get(self, item):
 		path = os.path.join(self.path, self._hash(item))
+		self._makedirs(os.path.dirname(path))
 		if os.path.exists(path):
 			return path
 
 	def set(self, item, data):
 		path = os.path.join(self.path, self._hash(item))
+		self._makedirs(os.path.dirname(path))
 		with open(path, "wb") as f:
 			f.write(data)
+
+		return path
 
 class Downloader(object):
 
@@ -209,8 +216,8 @@ class Downloader(object):
 			if torrent == "File not found.":
 				raise ServerError("File not found: %r" % (tfilUrl))
 
-			self.debug("Setting cache for tfilUrl=%r, torrent length=%r bytes" % (tfilUrl, len(torrent)))
-			self.cache.set(tfilUrl, torrent)
+			path = self.cache.set(tfilUrl, torrent)
+			self.debug("Cache torrent path=%r" % (path))
 
 		self.debug("Parsing torrent...")
 		d, length = parseTorrent(torrent)
