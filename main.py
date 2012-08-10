@@ -228,7 +228,20 @@ class Downloader(object):
 		if not directDownload.endswith("/"):
 			directDownload += "/"
 
-		mfil = MFIL(urlopen(mfilUrl))
+		mfil = self.cache.get(mfilUrl)
+		if mfil:
+			self.debug("cache hit: mfil=%r" % (mfil))
+		else:
+			self.debug("Downloading manifest file...")
+			try:
+				mfil = urlopen(mfilUrl).read()
+			except HTTPError as e:
+				raise ServerError("Could not open %s: %s" % (mfilUrl, e))
+
+			mfil = self.cache.set(mfilUrl, mfil)
+			self.debug("Cache manifest path=%r" % (path))
+
+		mfil = MFIL(mfil)
 
 		files = set()
 		for file, fileInfo in mfil["file"].items():
