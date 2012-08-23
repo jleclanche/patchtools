@@ -292,7 +292,7 @@ class Downloader(object):
 
 	def getProgramXML(self):
 		if self.args.data:
-			return self.args.data
+			return self.args.data.encode("utf-8")
 
 		program = self.args.program
 		component = self.args.component
