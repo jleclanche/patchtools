@@ -155,6 +155,10 @@ class Downloader(object):
 		data = record.firstChild.data.strip()
 		self.debug("data=%r" % (data))
 
+		component = record.getAttribute("component")
+		if component == "cdn":
+			return
+
 		incrementalTorrent, fullTorrent, toBuild, fromBuild, zero = data.split(";")
 
 		files = set()
