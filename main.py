@@ -263,6 +263,12 @@ class Downloader(object):
 
 			files.add(file)
 
+		if True: # add a flag to disable?
+			for f in d[b"info"][b"files"]:
+				path = "/".join(str(x, "utf-8") for x in f[b"path"])
+				if path != "alignment":
+					files.add(path)
+
 		self.outputFiles(files, directDownload, mfil["file"])
 
 	def getBaseUrl(self, base, product, network):
