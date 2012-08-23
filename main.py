@@ -168,15 +168,17 @@ class Downloader(object):
 				raise ServerError("File not found: %r" % (tfilUrl))
 
 			d, length = parseTorrent(torrent)
-			directDownload = d["direct download"]
+			directDownload = d[b"direct download"].decode("utf-8")
 			self.debug("directDownload=%r" % (directDownload))
 			# Always make sure the url ends with a slash, so we don't
 			# get a different result depending on whether it does or not
 			if not directDownload.endswith("/"):
 				directDownload += "/"
 
-			for f in d["info"]["files"]:
-				files.add("/".join(f["path"]))
+			for f in d[b"info"][b"files"]:
+				path = "/".join(str(x, "utf-8") for x in f[b"path"])
+				if path != "alignment":
+					files.add(path)
 
 		self.outputFiles(files, directDownload)
 
@@ -328,7 +330,7 @@ class Downloader(object):
 
 		return dom.documentElement.toxml("utf-8")
 
-	def outputFiles(self, files, baseUrl, mfil):
+	def outputFiles(self, files, baseUrl, mfil=None):
 		baseDir = baseUrl.split("/")[-2]
 		targetDir = os.path.join(self.args.base, self.args.program, baseDir)
 		total = 0
@@ -338,6 +340,9 @@ class Downloader(object):
 				path = os.path.join(targetDir, file)
 				if os.path.exists(path):
 					if self.args.checksizes:
+						if not mfil:
+							self.error("Size checks are not available for this download type.")
+
 						disksize = os.path.getsize(path)
 						filesize = int(mfil[file]["size"])
 						self.debug("disksize=%r, filesize=%r" % (disksize, filesize))
