@@ -137,6 +137,7 @@ class Downloader(object):
 		for record in parseString(response).getElementsByTagName("record"):
 			serverProgram = record.getAttribute("program")
 			print("%s::%s" % (serverProgram, record.getAttribute("component")))
+			self.debug("record=%r" % (record.toxml()))
 
 			if serverProgram not in downloadTypes:
 				self.error("Don't know how to download.")
