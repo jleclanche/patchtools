@@ -322,6 +322,12 @@ class Downloader(object):
 		dom.documentElement.appendChild(record)
 
 		record = dom.createElement("record")
+		record.setAttribute("program", "Agnt")
+		record.setAttribute("component", "cdn")
+		record.setAttribute("version", "1")
+		dom.documentElement.appendChild(record)
+
+		record = dom.createElement("record")
 		record.setAttribute("program", program)
 		record.setAttribute("component", component)
 		record.setAttribute("version", str(clientVersion))
