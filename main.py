@@ -126,7 +126,7 @@ class Downloader(object):
 			"Clnt": self.downloadAgent,
 			"D3": self.downloadMfil,
 			"D3B": self.downloadMfil,
-			"S2": self.downloadClassic,
+			"S2": self.downloadMfil,
 			"S2B": self.downloadMfil,
 			"Tool": self.downloadClassic,
 			"WoW": self.downloadMfil,
@@ -170,6 +170,11 @@ class Downloader(object):
 			d, length = parseTorrent(torrent)
 			directDownload = d[b"direct download"].decode("utf-8")
 			self.debug("directDownload=%r" % (directDownload))
+
+			# As of S2 1.5, directDownload supports mirrors, e.g.:
+			# "http://dist.blizzard.com.edgesuite.net/sc2-pod-retail/NA/22342.direct|http://llnw.blizzard.com/sc2-pod-retail/NA/22342.direct"
+			directDownload = directDownload.split("|")[0]
+
 			# Always make sure the url ends with a slash, so we don't
 			# get a different result depending on whether it does or not
 			if not directDownload.endswith("/"):
@@ -234,6 +239,11 @@ class Downloader(object):
 		d, length = parseTorrent(torrent)
 		directDownload = d[b"direct download"].decode("utf-8")
 		self.debug("directDownload=%r" % (directDownload))
+
+		# As of S2 1.5, directDownload supports mirrors, e.g.:
+		# "http://dist.blizzard.com.edgesuite.net/sc2-pod-retail/NA/22342.direct|http://llnw.blizzard.com/sc2-pod-retail/NA/22342.direct"
+		directDownload = directDownload.split("|")[0]
+
 		# Always make sure the url ends with a slash, so we don't
 		# get a different result depending on whether it does or not
 		if not directDownload.endswith("/"):
