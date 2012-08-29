@@ -353,6 +353,12 @@ class Downloader(object):
 		return dom.documentElement.toxml("utf-8")
 
 	def outputFiles(self, files, baseUrl, mfil=None):
+		formats = {
+			"curl": "curl -# --fail --create-dirs %(url)s -o %(output)s &&",
+			"plain": "%(url)s",
+		}
+		outputFormat = formats["curl"]
+
 		baseDir = baseUrl.split("/")[-2]
 		targetDir = os.path.join(self.args.base, self.args.program, baseDir)
 		total = 0
@@ -370,7 +376,7 @@ class Downloader(object):
 						self.debug("disksize=%r, filesize=%r" % (disksize, filesize))
 						if disksize != filesize:
 							self.error("Size mismatch: %r (Expected %r, got %r)" % (path, filesize, disksize))
-							output.append("curl -# --fail --create-dirs %s -o %s" % (baseUrl + file, path))
+							output.append(outputFormat % {"url": baseUrl + file, "output": path})
 
 						continue
 
@@ -381,10 +387,10 @@ class Downloader(object):
 					if not self.args.avi and not self.args.checksizes:
 						continue
 
-				output.append("curl -# --fail --create-dirs %s -o %s" % (baseUrl + file, path))
+				output.append(outputFormat % {"url": baseUrl + file, "output": path})
 				total += 1
 
-		print(" &&\n".join(output))
+		print("\n".join(output))
 		print("%i/%i files" % (total, len(files)))
 
 def main():
