@@ -126,6 +126,7 @@ class Downloader(object):
 			"Clnt": self.downloadAgent,
 			"D3": self.downloadMfil,
 			"D3B": self.downloadMfil,
+			"D3T": self.downloadMfil,
 			"S2": self.downloadMfil,
 			"S2B": self.downloadMfil,
 			"Tool": self.downloadClassic,
