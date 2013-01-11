@@ -383,6 +383,11 @@ class Downloader(object):
 						if not mfil:
 							self.error("Size checks are not available for this download type.")
 
+						if file not in mfil:
+							# Happens when we have files only present in the torrent file
+							self.warn("File %r not present in mfil. Skipping." % (file))
+							continue
+
 						disksize = os.path.getsize(path)
 						filesize = int(mfil[file]["size"])
 						self.debug("disksize=%r, filesize=%r" % (disksize, filesize))
