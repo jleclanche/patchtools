@@ -22,7 +22,6 @@ import sys
 from argparse import ArgumentParser
 from urllib.request import urlopen
 from urllib.error import HTTPError
-
 from xml.dom.minidom import getDOMImplementation, parseString
 from xml.parsers.expat import ExpatError
 
@@ -137,11 +136,16 @@ class Downloader(object):
 
 		for record in parseString(response).getElementsByTagName("record"):
 			serverProgram = record.getAttribute("program")
-			print("%s::%s" % (serverProgram, record.getAttribute("component")))
+			component = record.getAttribute("component")
+			print("%s::%s" % (serverProgram, component))
 			self.debug("record=%r" % (record.toxml()))
 
 			if serverProgram not in downloadTypes:
 				self.error("Don't know how to download.")
+				continue
+
+			if component == "blob":
+				self.downloadBlob(record)
 				continue
 
 			try:
@@ -158,6 +162,8 @@ class Downloader(object):
 
 		component = record.getAttribute("component")
 		if component == "cdn":
+			cdns = data.split("|")
+			print("Available CDNs: %s" % (", ".join(cdns)))
 			return
 
 		incrementalTorrent, fullTorrent, toBuild, fromBuild, zero = data.split(";")
@@ -187,6 +193,11 @@ class Downloader(object):
 					files.add(path)
 
 		self.outputFiles(files, directDownload)
+
+	def downloadBlob(self, record):
+		data = record.firstChild.data.strip()
+		self.debug("data=%r" % (data))
+		print(data)
 
 	def downloadClassic(self, record):
 		data = record.firstChild.data.strip()
