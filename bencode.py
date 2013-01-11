@@ -1,226 +1,188 @@
-# Copyright (C) 2011 by clueless <clueless.nospam@gmail.com>
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-#
-# Version: 20110424
-#
-# Changelog
-# ---------
-# 2011-04-24  - Changed date format to YYYY-MM-DD for versioning, bigger
-#               integer denotes a newer version
-#             - Fixed a bug that would treat False as an integral type but
-#               encode it using the 'False' string, attempting to encode a
-#               boolean now results in an error
-#             - Fixed a bug where an integer value of 0 in a list or
-#               dictionary resulted in a parse error while decoding
-#
-# 2011-04-03  - Original release
+#!/usr/bin/env python
 
-_TYPE_INT        = 1
-_TYPE_STRING     = 2
-_TYPE_LIST       = 3
-_TYPE_DICTIONARY = 4
-_TYPE_END        = 5
-_TYPE_INVALID    = 6
+"""
+bencode/decode library.
 
-# Function to determine the type of he next value/item
-#   Arguments:
-#       char        First character of the string that is to be decoded
-#   Return value:
-#       Returns an integer that describes what type the next value/item is
-def _gettype(char):
-	if char == 0x6C:                        # 'l'
-		return _TYPE_LIST
-	elif char == 0x64:                      # 'd'
-		return _TYPE_DICTIONARY
-	elif char == 0x69:                      # 'i'
-		return _TYPE_INT
-	elif char == 0x65:                      # 'e'
-		return _TYPE_END
-	elif char >= 0x30 and char <= 0x39:     # '0' '9'
-		return _TYPE_STRING
-	else:
-		return _TYPE_INVALID
+bencoding is used in bittorrent files
 
-# Function to parse a string from the bendcoded data
-#   Arguments:
-#       data        bencoded data, must be guaranteed to be a string
-#   Return Value:
-#       Returns a tuple, the first member of the tuple is the parsed string
-#       The second member is whatever remains of the bencoded data so it can
-#       be used to parse the next part of the data
-def _decode_string(data):
-	end = 1
-	while data[end] != 0x3A:    # ':'
-		end = end + 1
-	strlen = int(data[:end])
-	return (data[end+1:strlen+end+1], data[strlen + end+1:])
+use the exposed functions to encode/decode them.
+"""
 
-# Function to parse an integer from the bencoded data
-#   Arguments:
-#       data        bencoded data, must be guaranteed to be an integer
-#   Return Value:
-#       Returns a tuple, the first member of the tuple is the parsed string
-#       The second member is whatever remains of the bencoded data so it can
-#       be used to parse the next part of the data
-def _decode_int(data):
-	end = 1
-	while data[end] != 0x65:     # 'e'
-		end = end + 1
-	return (int(data[1:end]), data[end+1:])
+from io import BytesIO, SEEK_CUR
+try: #py 3.3
+	from collections.abc import Iterable, Mapping
+except ImportError:
+	from collections     import Iterable, Mapping
 
-# Function to parse a bencoded list
-#   Arguments:
-#       data        bencoded data, must be guaranted to be the start of a list
-#   Return Value:
-#       Returns a tuple, the first member of the tuple is the parsed list
-#       The second member is whatever remains of the bencoded data so it can
-#       be used to parse the next part of the data
-def _decode_list(data):
-	x = []
-	overflow = data[1:]
-	while True:                                         # Loop over the data
-		value, overflow = _decode(overflow)             #
-		if isinstance(value, bool) or overflow == '':   # - if we have a parse error
-			return (False, False)                       #     Die with error
-		else:                                           # - Otherwise
-			x.append(value)                             #     add the value to the list
-		if _gettype(overflow[0]) == _TYPE_END:          # - Break if we reach the end of the list
-			return (x, overflow[1:])                    #     and return the list and overflow
+_TYPE_INT  = b'i'
+_TYPE_LIST = b'l'
+_TYPE_DICT = b'd'
+_TYPE_END  = b'e'
+_TYPE_SEP  = b':'
+_TYPES_STR = b'0123456789'
 
-# Function to parse a bencoded list
-#   Arguments:
-#       data        bencoded data, must be guaranted to be the start of a list
-#   Return Value:
-#       Returns a tuple, the first member of the tuple is the parsed dictionary
-#       The second member is whatever remains of the bencoded data so it can
-#       be used to parse the next part of the data
-def _decode_dict(data):
-	x = {}
-	overflow = data[1:]
-	while True:                                         # Loop over the data
-		if _gettype(overflow[0]) != _TYPE_STRING:       # - If the key is not a string
-			return (False, False)                       #     Die with error
-		key, overflow = _decode(overflow)               #
-		if key == False or overflow == '':              # - If parse error
-			return (False, False)                       #     Die with error
-		value, overflow = _decode(overflow)             #
-		if isinstance(value, bool) or overflow == '':   # - If parse error
-			print("Error parsing value")
-			print(value)
-			print(overflow)
-			return (False, False)                       #     Die with error
+TYPES = {
+	_TYPE_INT:  int,
+	_TYPE_LIST: list,
+	_TYPE_DICT: dict,
+	_TYPE_END:  None,
+	#_TYPE_SEP only appears in strings, not here
+}
+for byte in _TYPES_STR:
+	TYPES[bytes([byte])] = str #b'0': str, b'1': str, …
+
+def _readuntil(f, end=_TYPE_END):
+	"""Helper function to read bytes until a certain end byte is hit"""
+	buf = bytearray()
+	while True:
+		byte = f.read(1)
+		if byte != end:
+			buf += byte
 		else:
-			x[key] = value
-		if _gettype(overflow[0]) == _TYPE_END:
-			return (x, overflow[1:])
+			break
+	return buf
 
-#   Arguments:
-#       data        bencoded data in bytes format
-#   Return Values:
-#       Returns a tuple, the first member is the parsed data, could be a string,
-#       an integer, a list or a dictionary, or a combination of those
-#       The second member is the leftover of parsing, if everything parses correctly this
-#       should be an empty byte string
-def _decode(data):
-	btype = _gettype(data[0])
-	if btype == _TYPE_INT:
-		return _decode_int(data)
-	elif btype == _TYPE_STRING:
-		return _decode_string(data)
-	elif btype == _TYPE_LIST:
-		return _decode_list(data)
-	elif btype == _TYPE_DICTIONARY:
-		return _decode_dict(data)
-	else:
-		return (False, False)
+def _decode_int(f):
+	"""
+	Integer types are normal ascii integers
+	Delimited at the start with 'i' and the end with 'e'
+	"""
+	assert f.read(1) == _TYPE_INT
+	return int(_readuntil(f))
 
-# Function to decode bencoded data
-#   Arguments:
-#       data        bencoded data, can be str or bytes
-#   Return Values:
-#       Returns the decoded data on success, this coud be bytes, int, dict or list
-#       or a combinatin of those
-#       If an error occurs the return value is False
-def decode(data):
+def _decode_buffer(f):
+	"""
+	String types are normal (byte)strings
+	starting with an integer followed by ':'
+	which designates the string’s length.
+
+	Since there’s no way to specify the byte type
+	in bencoded files, we have to guess
+	"""
+	strlen = int(_readuntil(f, _TYPE_SEP))
+	buf = f.read(strlen)
+	try:
+		return buf.decode()
+	except UnicodeDecodeError:
+		return buf
+
+def _decode_list(f):
+	assert f.read(1) == _TYPE_LIST
+	ret = []
+	while True:
+		item = bdecode(f)
+		if item is None:
+			break
+		else:
+			ret.append(item)
+	return ret
+
+def _decode_dict(f):
+	assert f.read(1) == _TYPE_DICT
+	ret = {}
+	while True:
+		key = bdecode(f)
+		if key is None:
+			break
+		else:
+			assert isinstance(key, (str, bytes))
+			ret[key] = bdecode(f)
+	return ret
+
+DECODERS = {
+	int:  _decode_int,
+	str:  _decode_buffer,
+	list: _decode_list,
+	dict: _decode_dict,
+}
+
+def bdecode(f):
+	"""
+	bdecodes data contained in a file f opened in bytes mode.
+	works by looking up the type byte,
+	and using it to look up the respective decoding function,
+	which in turn is used to return the decoded object
+	"""
+	btype = TYPES[f.read(1)]
+	if btype is not None:
+		f.seek(-1, SEEK_CUR)
+		return DECODERS[btype](f)
+	else: #Used in dicts and lists to designate an end
+		return None
+
+def bdecode_buffer(data):
+	"""Convenience wrapper around bdecode that accepts strings or bytes"""
 	if isinstance(data, str):
 		data = data.encode()
-	decoded, overflow = _decode(data)
-	return decoded
+	with BytesIO(data) as f:
+		return bdecode(f)
 
-#   Args: data as integer
-# return: encoded byte string
-def _encode_int(data):
-	return b'i' + str(data).encode() + b'e'
+################
+### Encoding ###
+################
 
-#   Args: data as string or bytes
-# Return: encoded byte string
-def _encode_string(data):
-	return str(len(data)).encode() + b':' + data
+def _encode_int(integer, f):
+	f.write(_TYPE_INT)
+	f.write(str(integer).encode())
+	f.write(_TYPE_END)
 
-#   Args: data as list
-# Return: Encoded byte string, false on error
-def _encode_list(data):
-	elist = b'l'
-	for item in data:
-		eitem = encode(item)
-		if eitem == False:
-			return False
-		elist += eitem
-	return elist + b'e'
+def _encode_buffer(string, f):
+	"""Writes the bencoded form of the input string or bytes"""
+	if isinstance(string, str):
+		string = string.encode()
+	f.write(str(len(string)).encode())
+	f.write(_TYPE_SEP)
+	f.write(string)
 
-#   Args: data as dict
-# Return: encoded byte string, false on error
-def _encode_dict(data):
-	edict = b'd'
-	keys = []
-	for key in data:
-		if not isinstance(key, str) and not isinstance(key, bytes):
-			return False
-		keys.append(key)
-	keys.sort()
-	for key in keys:
-		ekey  = encode(key)
-		eitem = encode(data[key])
-		if ekey == False or eitem == False:
-			return False
-		edict += ekey + eitem
-	return edict + b'e'
+def _encode_iterable(iterable, f):
+	f.write(_TYPE_LIST)
+	for item in iterable:
+		bencode(item, f)
+	f.write(_TYPE_END)
 
-# Function to encode a variable in bencoding
-#   Arguments:
-#       data        Variable to be encoded, can be a list, dict, str, bytes, int or a combination of those
-#   Return Values:
-#       Returns the encoded data as a byte string when successful
-#       If an error occurs the return value is False
-def encode(data):
-	if isinstance(data, bool):
-		return False;
-	elif isinstance(data, int):
-		return _encode_int(data)
-	elif isinstance(data, bytes):
-		return _encode_string(data)
-	elif isinstance(data, str):
-		return _encode_string(data.encode())
-	elif isinstance(data, list):
-		return _encode_list(data)
-	elif isinstance(data, dict):
-		return _encode_dict(data)
-	else:
-		return False
+def _encode_mapping(mapping, f):
+	f.write(_TYPE_DICT)
+	for key, value in mapping.items():
+		_encode_buffer(key, f)
+		bencode(value, f)
+	f.write(_TYPE_END)
+
+def bencode(data, f):
+	"""
+	Writes a serializable data piece to f
+	The order of tests is nonarbitrary,
+	as strings and mappings are iterable.
+	"""
+	if isinstance(data, int):
+		_encode_int(data, f)
+	elif isinstance(data, (str, bytes)):
+		_encode_buffer(data, f)
+	elif isinstance(data, Mapping):
+		_encode_mapping(data, f)
+	elif isinstance(data, Iterable):
+		_encode_iterable(data, f)
+
+def bencode_buffer(data):
+	"""
+	Convenience wrapper around bencode that returns a byte array
+	of the serialized sata
+	"""
+	with BytesIO() as f:
+		bencode(data, f)
+		return f.getvalue()
+
+def main():
+	import sys, pprint
+	from argparse import ArgumentParser, FileType
+	parser = ArgumentParser(description='Decodes bencoded files to python objects.')
+	parser.add_argument('infile',  nargs='?', type=FileType('rb'), default=sys.stdin.buffer,
+		help='bencoded file (e.g. torrent) [Default: stdin]')
+	parser.add_argument('outfile', nargs='?', type=FileType('w'), default=sys.stdout,
+		help='python-syntax serialization [Default: stdout]')
+	args = parser.parse_args()
+
+	data = bdecode(args.infile)
+	pprint.pprint(data, stream=args.outfile)
+
+if __name__ == '__main__':
+	main()

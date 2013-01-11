@@ -170,12 +170,10 @@ class Downloader(object):
 
 		files = set()
 		for url in (incrementalTorrent, fullTorrent):
-			torrent = urlopen(url).read()
-			if torrent == "File not found.":
-				raise ServerError("File not found: %r" % (tfilUrl))
+			torrent = urlopen(url)
 
-			d, length = parseTorrent(torrent)
-			directDownload = d[b"direct download"].decode("utf-8")
+			d = parseTorrent(torrent)
+			directDownload = d["direct download"].decode("utf-8")
 			self.debug("directDownload=%r" % (directDownload))
 
 			# As of S2 1.5, directDownload supports mirrors, e.g.:
@@ -187,8 +185,8 @@ class Downloader(object):
 			if not directDownload.endswith("/"):
 				directDownload += "/"
 
-			for f in d[b"info"][b"files"]:
-				path = "/".join(str(x, "utf-8") for x in f[b"path"])
+			for f in d["info"]["files"]:
+				path = "/".join(str(x, "utf-8") for x in f["path"])
 				if path != "alignment":
 					files.add(path)
 
@@ -233,23 +231,20 @@ class Downloader(object):
 		torrent = self.cache.get(tfilUrl)
 		if torrent:
 			self.debug("cache hit: torrent=%r" % (torrent))
-			torrent = open(torrent, "rb").read()
+			torrent = open(torrent, "rb")
 		else:
 			self.debug("Downloading torrent file...")
 			try:
-				torrent = urlopen(tfilUrl).read()
+				torrent = urlopen(tfilUrl)
 			except HTTPError as e:
 				raise ServerError("Could not open %s: %s" % (tfilUrl, e))
-
-			if torrent == "File not found.":
-				raise ServerError("File not found: %r" % (tfilUrl))
 
 			path = self.cache.set(tfilUrl, torrent)
 			self.debug("Cache torrent path=%r" % (path))
 
 		self.debug("Parsing torrent...")
-		d, length = parseTorrent(torrent)
-		directDownload = d[b"direct download"].decode("utf-8")
+		d = parseTorrent(torrent)
+		directDownload = d["direct download"]
 		self.debug("directDownload=%r" % (directDownload))
 
 		# As of S2 1.5, directDownload supports mirrors, e.g.:
@@ -286,8 +281,8 @@ class Downloader(object):
 			files.add(file)
 
 		if True: # add a flag to disable?
-			for f in d[b"info"][b"files"]:
-				path = "/".join(str(x, "utf-8") for x in f[b"path"])
+			for f in d["info"]["files"]:
+				path = "/".join(f["path"])
 				if path != "alignment":
 					files.add(path)
 
