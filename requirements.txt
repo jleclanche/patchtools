@@ -1,1 +1,2 @@
 bcoding==1.0
+-e git://github.com/Adys/python-mfil.git@a098284aef4c32dd76358599962a9b0f580c86ce#egg=python_mfil-dev
