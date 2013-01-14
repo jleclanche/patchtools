@@ -19,14 +19,12 @@ Tool:
 
 import os
 import sys
-from argparse import ArgumentParser
+from bcoding import bdecode
+from mfil import MFIL2 as MFIL
 from urllib.request import urlopen
 from urllib.error import HTTPError
 from xml.dom.minidom import getDOMImplementation, parseString
 from xml.parsers.expat import ExpatError
-
-from bencode import _decode_dict as parseTorrent
-from mfil import MFIL2 as MFIL
 
 
 PROGRAM = "patchdl"
@@ -74,6 +72,7 @@ class Downloader(object):
 	SERVER = "http://%s.patch.battle.net:1119/patch"
 
 	def __init__(self, *args):
+		from argparse import ArgumentParser
 		arguments = ArgumentParser(prog=PROGRAM)
 		arguments.add_argument("-c", "--client", type=int, dest="client", default=LIVE, help="client version (1 for live, 2 for PTR)")
 		arguments.add_argument("-s", "--server", type=str, dest="server", default="enUS", help="server to connect to (locale xxXX or public-test)")
@@ -172,7 +171,7 @@ class Downloader(object):
 		for url in (incrementalTorrent, fullTorrent):
 			torrent = urlopen(url)
 
-			d = parseTorrent(torrent)
+			d = bdecode(torrent)
 			directDownload = d["direct download"].decode("utf-8")
 			self.debug("directDownload=%r" % (directDownload))
 
@@ -243,7 +242,7 @@ class Downloader(object):
 			self.debug("Cache torrent path=%r" % (path))
 
 		self.debug("Parsing torrent...")
-		d = parseTorrent(torrent)
+		d = bdecode(torrent)
 		directDownload = d["direct download"]
 		self.debug("directDownload=%r" % (directDownload))
 
