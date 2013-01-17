@@ -64,8 +64,9 @@ class Cache(object):
 		path = self._path(item)
 		with open(path, "wb") as f:
 			f.write(data)
+		f = open(path, "rb")
 
-		return path
+		return path, f
 
 class Downloader(object):
 
@@ -238,7 +239,7 @@ class Downloader(object):
 			except HTTPError as e:
 				raise ServerError("Could not open %s: %s" % (tfilUrl, e))
 
-			path = self.cache.set(tfilUrl, torrent)
+			path, torrent = self.cache.set(tfilUrl, torrent.read())
 			self.debug("Cache torrent path=%r" % (path))
 
 		self.debug("Parsing torrent...")
@@ -265,8 +266,8 @@ class Downloader(object):
 			except HTTPError as e:
 				raise ServerError("Could not open %s: %s" % (mfilUrl, e))
 
-			mfil = self.cache.set(mfilUrl, mfil)
-			self.debug("Cache manifest path=%r" % (path))
+			mfilPath, mfil = self.cache.set(mfilUrl, mfil)
+			self.debug("Cache manifest path=%r" % (mfilPath))
 
 		mfil = MFIL(mfil)
 
