@@ -42,9 +42,12 @@ class Cache(object):
 	"""
 	def __init__(self, program):
 		HOME = os.path.expanduser("~")
-		XDG_CACHE_HOME  = os.environ.get("XDG_CACHE_HOME", os.path.join(HOME, ".cache"))
+		XDG_CACHE_HOME = os.environ.get("XDG_CACHE_HOME", os.path.join(HOME, ".cache"))
 		self.path = os.path.join(XDG_CACHE_HOME, program)
 		self._makedirs(self.path)
+
+	def __repr__(self):
+		return "<Cache at %r>" % (self.path)
 
 	def _makedirs(self, dir):
 		if not os.path.exists(dir):
@@ -67,6 +70,24 @@ class Cache(object):
 		f = open(path, "rb")
 
 		return path, f
+
+	def verify(self, item):
+		import re
+		from hashlib import md5
+
+		path = self.get(item)
+		if not path:
+			return False
+		name = os.path.basename(path)
+
+		sre = re.search(r"([a-fA-F0-9]{32})", name).groups()
+		if not sre:
+			raise ValueError("Could not find a hash in %s" % (name))
+		hash = sre[0].lower()
+
+		with open(path, "rb") as f:
+			fhash = md5(f.read()).hexdigest()
+			return fhash == hash
 
 class Downloader(object):
 
