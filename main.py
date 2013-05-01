@@ -127,7 +127,7 @@ class Downloader(object):
 		xml = self.getProgramXML()
 		server = self.SERVER % (self.args.server)
 
-		self.debug("xml=%r" % (xml))
+		self.debug("POST %r %r" % (server, xml))
 
 		try:
 			f = urlopen(server, xml)
@@ -139,6 +139,7 @@ class Downloader(object):
 		if not response:
 			self.error("No response from %s" % (server))
 			return 1
+		self.debug("response=%r" % (response))
 
 		downloadTypes = {
 			"Agnt": self.downloadAgent,
@@ -254,7 +255,7 @@ class Downloader(object):
 			self.debug("cache hit: torrent=%r" % (torrent))
 			torrent = open(torrent, "rb")
 		else:
-			self.debug("Downloading torrent file...")
+			self.debug("Reading torrent file: %r" % (tfilUrl))
 			try:
 				torrent = urlopen(tfilUrl)
 			except HTTPError as e:
@@ -281,7 +282,7 @@ class Downloader(object):
 		if mfil:
 			self.debug("cache hit: mfil=%r" % (mfil))
 		else:
-			self.debug("Downloading manifest file...")
+			self.debug("Reading manifest file: %r" % (mfilUrl))
 			try:
 				mfil = urlopen(mfilUrl).read()
 			except HTTPError as e:
