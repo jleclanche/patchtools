@@ -208,9 +208,10 @@ class Downloader(object):
 				directDownload += "/"
 
 			for f in d["info"]["files"]:
+				if f["type"] == "alignment":
+					continue
 				path = "/".join(str(x, "utf-8") for x in f["path"])
-				if path != "alignment":
-					files.add(path)
+				files.add(path)
 
 		self.outputFiles(files, directDownload)
 
@@ -304,9 +305,9 @@ class Downloader(object):
 
 		if True: # add a flag to disable?
 			for f in d["info"]["files"]:
-				path = "/".join(f["path"])
-				if path != "alignment":
-					files.add(path)
+				if f["type"] == "alignment":
+					continue
+				files.add("/".join(f["path"]))
 
 		self.outputFiles(files, directDownload, mfil["file"])
 
