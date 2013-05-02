@@ -104,7 +104,7 @@ class Downloader(object):
 		arguments.add_argument("--component", type=str, dest="component", default="enUS", help="program component")
 		arguments.add_argument("--mfil", type=str, dest="mfil", help="Force a specific mfil url")
 		arguments.add_argument("--tool", type=int, dest="tool", help="Tool version (if downloading tool patches)")
-		arguments.add_argument("--network", type=str, dest="network", default="akamai", help="Content Distribution Network (possible choices are akamai, att, limelight)")
+		arguments.add_argument("--preferred-server", type=str, dest="preferred_server", default="akamai", help="Content Distribution Network (possible choices are akamai, att, limelight)")
 		arguments.add_argument("--show-avi", action="store_true", dest="avi", help="include .avi files in the output")
 		arguments.add_argument("--show-downloaded", action="store_true", dest="downloaded", help="include downloaded files in the output")
 		arguments.add_argument("--post-data", type=str, dest="data", help="Send this data (emulates wget --post-data)")
@@ -238,7 +238,7 @@ class Downloader(object):
 		self.debug("base=%r" % (base))
 
 		build = int(build)
-		baseUrl = self.getBaseUrl(base, program, self.args.network)
+		baseUrl = self.getBaseUrl(base, program, self.args.preferred_server)
 		self.debug("baseUrl=%r" % (baseUrl))
 		tfilUrl = baseUrl + "%s-%i-%s.torrent" % (program.lower(), build, thash)
 		if self.args.mfil:
@@ -310,7 +310,7 @@ class Downloader(object):
 
 		self.outputFiles(files, directDownload, mfil["file"])
 
-	def getBaseUrl(self, base, product, network):
+	def getBaseUrl(self, base, product, server):
 		try:
 			response = urlopen(base).read()
 		except HTTPError as e:
@@ -324,17 +324,17 @@ class Downloader(object):
 			raise ServerError("Invalid XML in %r: %s" %(base, e))
 
 		assert dom.documentElement.tagName == "config"
-		def getServer(dom, product, network=None):
+		def getServer(dom, product, server=None):
 			for version in dom.getElementsByTagName("version"):
 				#self.debug("version=%s" % (version.toxml()))
 				if version.getAttribute("product") == product:
-					for server in version.getElementsByTagName("server"):
-						if not network or server.getAttribute("id") == network:
-							return server.getAttribute("url")
+					for e in version.getElementsByTagName("server"):
+						if not server or e.getAttribute("id") == server:
+							return e.getAttribute("url")
 
-		ret = getServer(dom, product, network)
+		ret = getServer(dom, product, server)
 		if not ret:
-			self.warn("Could not find a base url for %r with %r as preferred network. Trying with all networks." % (base, network))
+			self.warn("Could not find a base url for %r with %r as preferred server. Trying with all servers." % (base, server))
 
 		ret = getServer(dom, product)
 		if not ret:
