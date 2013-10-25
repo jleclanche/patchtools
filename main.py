@@ -212,7 +212,7 @@ class Downloader(object):
 			for f in d["info"]["files"]:
 				if f["type"] == "alignment":
 					continue
-				path = "/".join(str(x, "utf-8") for x in f["path"])
+				path = "/".join(f["path"])
 				files.add(path)
 
 		self.outputFiles(files, directDownload)
