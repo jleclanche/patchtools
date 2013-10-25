@@ -212,7 +212,7 @@ def main():
 			gameBlob = bpp.Blob(base, gameHash, "game", record.program)
 			cache_blob(gameBlob)
 
-			if installHash:
+			if installHash and installHash != "00000000000000000000000000000000":
 				installBlob = bpp.Blob(base, installHash, "install", record.program)
 				cache_blob(installBlob)
 
