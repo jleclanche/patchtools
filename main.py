@@ -220,7 +220,12 @@ class Downloader(object):
 	def downloadBlob(self, record):
 		data = record.firstChild.data.strip()
 		self.debug("data=%r" % (data))
-		print(data)
+		base, installHash, gameHash, _ = data.split(";")
+		self.debug("base=%r, installHash=%r, gameHash=%r, _=%r" % (base, installHash, gameHash, _))
+		game = base + "/" + "%s_game_%s.blob" % (self.args.program.lower(), gameHash)
+		install = base + "/" + "%s_install_%s.blob" % (self.args.program.lower(), installHash)
+		print("Game blob at %s" % (game))
+		print("Install blob at %s" % (install))
 
 	def downloadClassic(self, record):
 		data = record.firstChild.data.strip()
