@@ -164,12 +164,12 @@ class Downloader(object):
 			print("%s::%s" % (serverProgram, component))
 			self.debug("record=%r" % (record.toxml()))
 
-			if serverProgram not in downloadTypes:
-				self.error("Don't know how to download.")
-				continue
-
 			if component == "blob":
 				self.downloadBlob(record)
+				continue
+
+			if serverProgram not in downloadTypes:
+				self.error("Don't know how to download.")
 				continue
 
 			try:
