@@ -23,7 +23,7 @@ def humanizedsize(bytes, precision=1):
 			break
 	return "%.*f %s" % (precision, bytes / factor, suffix)
 
-MPQ_BASE_DIR = os.environ.get("MPQ_BASE_DIR", os.path.join(os.path.expanduser("~"), "mpq"))
+MPQ_BASE_DIR = os.environ.get("MPQ_BASE_DIR", os.path.join(os.environ.get("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share")), "mpq"))
 
 
 def cache_blob(blob):

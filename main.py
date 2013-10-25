@@ -30,7 +30,7 @@ from xml.parsers.expat import ExpatError
 PROGRAM = "patchdl"
 LIVE = 1
 PTR  = 2
-MPQ_BASE_DIR = os.environ.get("MPQ_BASE_DIR", os.path.join(os.path.expanduser("~"), "mpq"))
+MPQ_BASE_DIR = os.environ.get("MPQ_BASE_DIR", os.path.join(os.environ.get("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share")), "mpq"))
 
 class ServerError(Exception):
 	pass
