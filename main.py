@@ -148,6 +148,8 @@ class Downloader(object):
 			"D3": self.downloadMfil,
 			"D3B": self.downloadMfil,
 			"D3T": self.downloadMfil,
+			"HS": self.downloadMfil,
+			"HSB": self.downloadMfil,
 			"S2": self.downloadMfil,
 			"S2B": self.downloadMfil,
 			"Tool": self.downloadClassic,
