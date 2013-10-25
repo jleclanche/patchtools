@@ -193,7 +193,7 @@ def main():
 				else:
 					miss.append((remote, local, file))
 
-			fmt = "curl -# --fail {remote} -o {local}"
+			fmt = "curl -# --fail {remote} -o {local} &&"
 			for remote, local, file in miss:
 				print(fmt.format(remote=remote, local=local))
 
