@@ -3,6 +3,7 @@ python-bpp
 Blizzard patching protocol
 """
 import json
+import os
 from collections import namedtuple
 from urllib.request import urlopen
 from urllib.error import HTTPError
@@ -158,6 +159,34 @@ class Resource(object):
 			self._data = self._urlopen(self.url()).read()
 		return self._data
 
+	def cache(self, path):
+		if os.path.exists(path):
+			return
+
+		base = os.path.dirname(path)
+		if not os.path.exists(base):
+			os.makedirs(base)
+
+		with open(path, "wb") as f:
+			data = self.data()
+			f.write(data)
+			print("Written %i bytes to %s" % (len(data), path))
+
+
+class SimpleResource(Resource):
+	def __init__(self, base, name):
+		if not base.endswith("/"):
+			base += "/"
+		self.base = base
+		self.name = name
+
+	def __repr__(self):
+		return "<SimpleResource %s>" % (self.name)
+
+	def url(self):
+		return self.base + self.name
+
+
 class Blob(Resource):
 	BLOB_FORMAT = "%s_%s_%s.blob"
 	GAME = "game"
@@ -202,8 +231,8 @@ class Catalog(Resource):
 		else:
 			return "<Catalog %s>" % (self.hash)
 
-	def name(self):
-		return CLOG_FORMAT % (self.name, self.hash)
+	def filename(self):
+		return self.CLOG_FORMAT % (self.name, self.hash)
 
 	def path(self):
 		return "%s/%s/%s" % (self.hash[0:2], self.hash[2:4], self.hash)
