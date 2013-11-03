@@ -27,28 +27,14 @@ MPQ_BASE_DIR = os.environ.get("MPQ_BASE_DIR", os.path.join(os.environ.get("XDG_D
 
 
 def cache_blob(blob):
-	directory = blob.base.split("/")[-2]
-	baseDir = os.path.join(MPQ_BASE_DIR, blob.program, directory)
-	if not os.path.exists(baseDir):
-		os.makedirs(baseDir)
-	path = os.path.join(baseDir, blob.name())
-	if not os.path.exists(path):
-		data = blob.data()
-		with open(path, "wb") as f:
-			f.write(data)
-		print("Written %i bytes to %s" % (len(data), path))
+	base = os.path.join(MPQ_BASE_DIR, blob.program, blob.base.split("/")[-2])
+	path = os.path.join(base, blob.name())
+	blob.cache(path)
 
 def cache_clog(clog):
-	baseDir = os.path.join(MPQ_BASE_DIR, "Clog", *clog.base.split("/")[-3:-1])
-	if not os.path.exists(baseDir):
-		os.makedirs(baseDir)
-	name = "%s-%s.clog" % (clog.name, clog.hash)
-	path = os.path.join(baseDir, name)
-	if not os.path.exists(path):
-		data = clog.data()
-		with open(path, "wb") as f:
-			f.write(data)
-		print("Written %i bytes to %s" % (len(data), path))
+	base = os.path.join(MPQ_BASE_DIR, "Clog", *clog.base.split("/")[4:-1]) # drop the tools-pod
+	path = os.path.join(base, clog.filename())
+	clog.cache(path)
 
 
 def main():
