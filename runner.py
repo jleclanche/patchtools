@@ -65,6 +65,9 @@ def main():
 	live.addRecord(program="Clnt", component="blob", version="1")
 	live.addRecord(program="Clnt", component="Win", version="1")
 
+	live.addRecord(program="dgst", component="blob", version="1")
+	live.addRecord(program="dgst", component="blob", version="3")
+
 	live.addRecord(program="bd3", component="Win", version="1")
 	live.addRecord(program="BD3R", component="Win", version="1")
 	live.addRecord(program="BS2R", component="Win", version="1")
@@ -121,6 +124,9 @@ def main():
 	ptr.addRecord(program="Clog", component="PUB", version="1")
 	ptr.addRecord(program="Clog", component="PUB", version="2")
 	ptr.addRecord(program="Clog", component="PUB", version="3")
+
+	ptr.addRecord(program="dgst", component="blob", version="1")
+	ptr.addRecord(program="dgst", component="blob", version="3")
 
 	ptr.addRecord(program="D3", component="blob", version="1")
 	ptr.addRecord(program="D3", component="enUS", version="1")
