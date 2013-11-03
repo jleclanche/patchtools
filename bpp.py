@@ -187,6 +187,7 @@ class Catalog(Resource):
 	"""
 
 	CATALOGS_KEY = "catalogs"
+	CLOG_FORMAT = "%s-%s.clog"
 
 	def __init__(self, base, hash, name=None):
 		if not base.endswith("/"):
@@ -200,6 +201,9 @@ class Catalog(Resource):
 			return "<Catalog %s: %s>" % (self.name, self.hash)
 		else:
 			return "<Catalog %s>" % (self.hash)
+
+	def name(self):
+		return CLOG_FORMAT % (self.name, self.hash)
 
 	def path(self):
 		return "%s/%s/%s" % (self.hash[0:2], self.hash[2:4], self.hash)
