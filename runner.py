@@ -197,7 +197,16 @@ def main():
 		if record.component == "blob":
 			base, installHash, gameHash, _ = record.text.split(";")
 
-			if not base.startswith("http"):
+			if base == "Bna":
+				_, base, win, osx = record.text.split(";")
+				baseDir = os.path.join(MPQ_BASE_DIR, "Clog", "bna", *base.split("/")[4:-1])
+				for name in win, osx:
+					blob = bpp.SimpleResource(base, name)
+					path = os.path.join(baseDir, name)
+					blob.cache(path)
+				continue
+
+			elif not base.startswith("http"):
 				print("Skipping %r: %r" % (base, record.text))
 				continue
 
