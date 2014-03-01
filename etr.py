@@ -1,8 +1,7 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 Blizzard Downloader torrent extractor
-By Jerome Leclanche <adys.wh@gmail.com>
+Written by Jerome Leclanche <jerome@leclan.ch>
 """
 
 from bencode import decode_dict
@@ -21,10 +20,10 @@ def extract(fname, out=""):
 			datafrom = data[i:]
 			break
 		i += 1
-	
+
 	decoded, length = decode_dict(datafrom, 0)
 	datafrom = datafrom[:length]
-	
+
 	out = out or fname + ".torrent"
 	out = open(out, "wb")
 	out.write(datafrom)
