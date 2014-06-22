@@ -231,9 +231,8 @@ class Catalog(object):
 		self.server = server
 		self.path = path
 		self.scheme = scheme
-		self.save_path = save_path
-
 		self.root_hash = root_hash
+		self.save_path = save_path
 
 		self.base_path = os.path.join(save_path, "Clog", path)
 
@@ -242,6 +241,12 @@ class Catalog(object):
 
 	def __repr__(self):
 		return "<Catalog at %r>" % (self.get_url(self.root_hash))
+
+	@property
+	def root(self):
+		if not hasattr(self, "_root"):
+			self._root = self.get_json(self.root_hash)
+		return self._root
 
 	def _cache(self, hash):
 		path = os.path.join(self.base_path, _hash(hash))
@@ -264,16 +269,15 @@ class Catalog(object):
 		return "%s://%s/%s/%s" % (self.scheme, self.server, self.path, _hash(hash))
 
 	def preload(self):
-		root = self.get_json(self.root_hash)
 
-		for lang, clog in root["catalogs"].items():
+		for lang, clog in self.root["catalogs"].items():
 			self._cache(clog["hash"])
 
-		if "manifest" not in root:
+		if "manifest" not in self.root:
 			print("WARNING: No manifest found. Old catalog?")
 			return
 
-		for filename, resource in root["manifest"]["lookup"].items():
+		for filename, resource in self.root["manifest"]["lookup"].items():
 			path = self._cache(resource)
 			link_path = os.path.join(self.save_path, "Clog", filename)
 			if not os.path.exists(link_path):
