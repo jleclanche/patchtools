@@ -70,7 +70,50 @@ def main():
 	live.addRecord(program="WoW", component="enUS", version="4")
 	live.addRecord(program="WoW", component="blob", version="1")
 
+	live.addRecord(program="HSB", component="enUS", version="1")
+	live.addRecord(program="HSB", component="blob", version="1")
+
 	records += live.open("http://enUS.patch.battle.net:1119/patch")
+
+	liveEU = bpp.BPPConnection(program="Release2")
+	liveEU.addRecord(program="Agnt", component="blob", version="1")
+	liveEU.addRecord(program="Agnt", component="cdn", version="1")
+	liveEU.addRecord(program="Agnt", component="cfg", version="1")
+	liveEU.addRecord(program="Agnt", component="Win", version="1")
+
+	liveEU.addRecord(program="Bnet", component="Win", version="1")
+
+	liveEU.addRecord(program="Clnt", component="blob", version="1")
+	liveEU.addRecord(program="Clnt", component="Win", version="1")
+
+	liveEU.addRecord(program="dgst", component="blob", version="1")
+	liveEU.addRecord(program="dgst", component="blob", version="3")
+
+	liveEU.addRecord(program="bd3", component="Win", version="1")
+	liveEU.addRecord(program="BD3R", component="Win", version="1")
+	liveEU.addRecord(program="BS2R", component="Win", version="1")
+	liveEU.addRecord(program="BWWR", component="Win", version="1")
+	liveEU.addRecord(program="BBNR", component="Win", version="1")
+	liveEU.addRecord(program="BCLT", component="blob", version="1")
+	liveEU.addRecord(program="D3", component="blob", version="1")
+	liveEU.addRecord(program="D3", component="enUS", version="1")
+	liveEU.addRecord(program="D3T", component="enUS", version="2")
+
+	liveEU.addRecord(program="bs2", component="Win", version="1")
+	liveEU.addRecord(program="S2", component="enUS", version="1")
+	liveEU.addRecord(program="S2", component="blob", version="1")
+
+	liveEU.addRecord(program="bwow", component="Win", version="1")
+	liveEU.addRecord(program="WoW", component="Win", version="1")
+	liveEU.addRecord(program="WoW", component="enUS", version="1")
+	#liveEU.addRecord(program="WoW", component="enUS", version="3") # causes 400 on enGB only
+	liveEU.addRecord(program="WoW", component="enUS", version="4")
+	liveEU.addRecord(program="WoW", component="blob", version="1")
+
+	liveEU.addRecord(program="HSB", component="enUS", version="1")
+	liveEU.addRecord(program="HSB", component="blob", version="1")
+
+	records += liveEU.open("http://enGB.patch.battle.net:1119/patch")
 
 
 	liveMac = bpp.BPPConnection(program="Release1Mac")
@@ -89,8 +132,6 @@ def main():
 	liveMac.addRecord(program="BBNR", component="Mac", version="1")
 
 	records += liveMac.open("http://enUS.patch.battle.net:1119/patch")
-
-	#live.addRecord(program="TCG", component="blob", version="1")
 
 
 	ptr = bpp.BPPConnection(program="Test1")
@@ -138,6 +179,8 @@ def main():
 	ptr.addRecord(program="WoWB", component="enUS", version="1")
 	ptr.addRecord(program="WoWB", component="enUS", version="3")
 
+	ptr.addRecord(program="HSB", component="blob", version="1")
+	ptr.addRecord(program="HSB", component="enUS", version="1")
 	ptr.addRecord(program="TCGB", component="blob", version="1")
 
 	records += ptr.open("http://public-test.patch.battle.net:1119/patch")
