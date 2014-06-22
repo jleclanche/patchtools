@@ -6,6 +6,7 @@ Blizzard patching protocol
 import json
 import os
 import requests
+import simplestore
 from collections import namedtuple
 from hashlib import md5
 from urllib.parse import urlparse
@@ -15,11 +16,13 @@ from xml.dom.minidom import getDOMImplementation, parseString
 from xml.parsers.expat import ExpatError
 
 
+Record = namedtuple("Record", ("program", "component", "version"))
+ResponseRecord = namedtuple("Record", ("program", "component", "text"))
+
+
 class ServerError(Exception):
 	pass
 
-Record = namedtuple("Record", ("program", "component", "version"))
-ResponseRecord = namedtuple("Record", ("program", "component", "text"))
 
 class BPPConnection(object):
 	def __init__(self, program):
@@ -108,7 +111,30 @@ class NGDPConnection(object):
 	def blob_game(self):
 		return self._query("/blob/game")
 
+	def _get_config(self, region, column):
+		if not self.cdn:
+			cdns = self.cdns()
+			host = cdns.get(cdns.rows[0], "hosts")
+			path = cdns.get(cdns.rows[0], "path")
+			self.set_cdn(host, path)
+
+		versions = self.versions()
+		for row in versions.rows:
+			if versions.get(row, "region") == region:
+				hash = versions.get(row, column)
+				path = self.cache_hash(hash, type="config")
+				with open(path, "r") as f:
+					return simplestore.load(f)
+
+	def build_config(self, region="xx"):
+		return self._get_config(region, "buildconfig")
+
+	def cdn_config(self, region="xx"):
+		return self._get_config(region, "cdnconfig")
+
 	def cache_hash(self, hash, type):
+		assert self.cdn
+		assert self.base_path
 		path = os.path.join(self.base_path, _hash(hash))
 		if not os.path.exists(path):
 			_prep_dir_for(path)
