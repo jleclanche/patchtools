@@ -31,11 +31,6 @@ def cache_blob(blob):
 	path = os.path.join(base, blob.name())
 	blob.cache(path)
 
-def cache_clog(clog):
-	base = os.path.join(MPQ_BASE_DIR, "Clog", *clog.base.split("/")[4:-1]) # drop the tools-pod
-	path = os.path.join(base, clog.filename())
-	clog.cache(path)
-
 
 def main():
 	records = []
@@ -107,9 +102,19 @@ def main():
 	ptr.addRecord(program="Bnet", component="Win", version="1")
 	ptr.addRecord(program="Clnt", component="blob", version="1")
 
-	ptr.addRecord(program="Clog", component="PUB", version="1")
-	ptr.addRecord(program="Clog", component="PUB", version="2")
-	ptr.addRecord(program="Clog", component="PUB", version="3")
+	# ptr.addRecord(program="Clog", component="PUB", version="1")
+	# ptr.addRecord(program="Clog", component="PUB", version="2")
+	# ptr.addRecord(program="Clog", component="PUB", version="3")
+	# ptr.addRecord(program="Clog", component="PUB", version="4")
+	# ptr.addRecord(program="Clog", component="PUB", version="5")
+	ptr.addRecord(program="Clog", component="PUB", version="6")
+	ptr.addRecord(program="Clog", component="PUB", version="7")
+	ptr.addRecord(program="Clog", component="PUB", version="8")
+	ptr.addRecord(program="Clog", component="PUB", version="9")
+	ptr.addRecord(program="Clog", component="PUB", version="10")
+	ptr.addRecord(program="Clog", component="PUB", version="11")
+	ptr.addRecord(program="Clog", component="PUB", version="12")
+	ptr.addRecord(program="Clog", component="PUB", version="13")
 
 	ptr.addRecord(program="dgst", component="blob", version="1")
 	ptr.addRecord(program="dgst", component="blob", version="3")
@@ -218,22 +223,22 @@ def main():
 				cache_blob(installBlob)
 
 		if record.component == "cdn":
-			pass
+			# Example text: "dist.blizzard.com.edgesuite.net|llnw.blizzard.com"
+			cdn = record.text.split("|")[0]
 
 		if record.component == "cfg":
 			# deprecated, empty
 			print(record.text)
 
 		if record.component == "Win":
-			print(record.text)
+			if record.text.count(";") == 3:
+				pass
+			#resource = bpp.SimpleResource(base, name)
 
-		if record.component == "PUB":
-			url, hash = record.text.split(";")
-			clog = bpp.Catalog(url, hash, name="base")
-			clog.fetch()
-			cache_clog(clog)
-			for catalog in clog.catalogs.values():
-				cache_clog(catalog)
+		if record.component == "PUB" and record.program == "Clog":
+			path, hash = record.text.split(";")
+			clog = bpp.Catalog(cdn, path, hash, save_path=MPQ_BASE_DIR)
+			clog.preload()
 
 
 if __name__ == "__main__":

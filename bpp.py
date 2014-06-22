@@ -2,9 +2,12 @@
 python-bpp
 Blizzard patching protocol
 """
+
 import json
 import os
+import requests
 from collections import namedtuple
+from hashlib import md5
 from urllib.request import urlopen
 from urllib.error import HTTPError
 from xml.dom.minidom import getDOMImplementation, parseString
@@ -210,42 +213,70 @@ class Blob(Resource):
 		return self.base + self.name()
 
 
-class Catalog(Resource):
-	"""
-	Used in the Battle.net desktop client
-	"""
 
-	CATALOGS_KEY = "catalogs"
-	CLOG_FORMAT = "%s-%s.clog"
+def _hash(hash):
+	"Helper that returns <hash:0-2>/<hash:2-4>/<hash>"
+	return "%s/%s/%s" % (hash[0:2], hash[2:4], hash)
 
-	def __init__(self, base, hash, name=None):
-		if not base.endswith("/"):
-			base += "/"
-		self.base = base
-		self.hash = hash
-		self.name = name
+
+def _prep_dir_for(filename):
+	"Helper that ensures the directory for \a filename exists"
+	dirname = os.path.dirname(filename)
+	if not os.path.exists(dirname):
+		os.makedirs(dirname)
+
+
+class Catalog(object):
+	def __init__(self, server, path, root_hash, save_path, scheme="http"):
+		self.server = server
+		self.path = path
+		self.scheme = scheme
+		self.save_path = save_path
+
+		self.root_hash = root_hash
+
+		self.base_path = os.path.join(save_path, "Clog", path)
+
+	def __str__(self):
+		return self.dict.__str__()
 
 	def __repr__(self):
-		if self.name:
-			return "<Catalog %s: %s>" % (self.name, self.hash)
-		else:
-			return "<Catalog %s>" % (self.hash)
+		return "<Catalog at %r>" % (self.get_url(self.root_hash))
 
-	def filename(self):
-		return self.CLOG_FORMAT % (self.name, self.hash)
+	def _cache(self, hash):
+		path = os.path.join(self.base_path, _hash(hash))
+		if not os.path.exists(path):
+			_prep_dir_for(path)
+			r = requests.get(self.get_url(hash))
+			assert md5(r.content).hexdigest() == hash
+			with open(path, "wb") as f:
+				print("Downloading %r to %r" % (r.url, path))
+				f.write(r.content)
 
-	def path(self):
-		return "%s/%s/%s" % (self.hash[0:2], self.hash[2:4], self.hash)
+		return path
 
-	def url(self):
-		return self.base + self.path()
+	def get_json(self, hash):
+		path = self._cache(hash)
+		with open(path, "r") as f:
+			return json.load(f)
 
-	def fetch(self):
-		d = json.loads(self.data().decode("utf-8"))
+	def get_url(self, hash):
+		return "%s://%s/%s/%s" % (self.scheme, self.server, self.path, _hash(hash))
 
-		self.catalogs = {}
-		for key, c in d[self.CATALOGS_KEY].items():
-			assert "hash" in c
-			self.catalogs[key] = self.__class__(self.base, c["hash"], name=key)
+	def preload(self):
+		root = self.get_json(self.root_hash)
 
-		return self.catalogs, d
+		for lang, clog in root["catalogs"].items():
+			self._cache(clog["hash"])
+
+		if "manifest" not in root:
+			print("WARNING: No manifest found. Old catalog?")
+			return
+
+		for filename, resource in root["manifest"]["lookup"].items():
+			path = self._cache(resource)
+			link_path = os.path.join(self.save_path, "Clog", filename)
+			if not os.path.exists(link_path):
+				print("Linking %r -> %r" % (path, link_path))
+				_prep_dir_for(link_path)
+				os.symlink(path, link_path)
