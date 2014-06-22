@@ -226,29 +226,30 @@ def _prep_dir_for(filename):
 		os.makedirs(dirname)
 
 
-class Catalog(object):
-	def __init__(self, server, path, root_hash, save_path, scheme="http"):
+class BaseCatalog(object):
+	def __init__(self, server, path, hash, region_code, save_path, scheme="http"):
 		self.server = server
 		self.path = path
 		self.scheme = scheme
-		self.root_hash = root_hash
+		self.hash = hash
 		self.save_path = save_path
+		self.region_code = region_code
 
 		self.base_path = os.path.join(save_path, "Clog", path)
 
 	def __str__(self):
-		return self.dict.__str__()
+		return self.root.__str__()
 
 	def __repr__(self):
-		return "<Catalog at %r>" % (self.get_url(self.root_hash))
+		return "<LazyCatalog at %r>" % (self.get_url(self.hash))
 
 	@property
 	def root(self):
 		if not hasattr(self, "_root"):
-			self._root = self.get_json(self.root_hash)
+			self._root = self.get_json(self.hash)
 		return self._root
 
-	def _cache(self, hash):
+	def cache(self, hash):
 		path = os.path.join(self.base_path, _hash(hash))
 		if not os.path.exists(path):
 			_prep_dir_for(path)
@@ -261,7 +262,7 @@ class Catalog(object):
 		return path
 
 	def get_json(self, hash):
-		path = self._cache(hash)
+		path = self.cache(hash)
 		with open(path, "r") as f:
 			return json.load(f)
 
@@ -269,16 +270,35 @@ class Catalog(object):
 		return "%s://%s/%s/%s" % (self.scheme, self.server, self.path, _hash(hash))
 
 	def preload(self):
+		# Cache the root hash by just accessing it
+		self.root
 
-		for lang, clog in self.root["catalogs"].items():
-			self._cache(clog["hash"])
+
+class Catalog(BaseCatalog):
+	def __init__(self, *args, **kwargs):
+		kwargs["region_code"] = None
+		super().__init__(*args, **kwargs)
+
+	def __repr__(self):
+		return "<Catalog at %r>" % (self.get_url(self.hash))
+
+	@property
+	def regions(self):
+		ret = {}
+		for region, d in self.root["catalogs"].items():
+			ret[region] = BaseCatalog(self.server, self.path, d["hash"], region, self.save_path, self.scheme)
+		return ret
+
+	def preload(self):
+		for catalog in self.regions.values():
+			catalog.preload()
 
 		if "manifest" not in self.root:
 			print("WARNING: No manifest found. Old catalog?")
 			return
 
 		for filename, resource in self.root["manifest"]["lookup"].items():
-			path = self._cache(resource)
+			path = self.cache(resource)
 			link_path = os.path.join(self.save_path, "Clog", filename)
 			if not os.path.exists(link_path):
 				print("Linking %r -> %r" % (path, link_path))
