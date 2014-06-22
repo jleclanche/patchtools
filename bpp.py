@@ -8,6 +8,7 @@ import os
 import requests
 from collections import namedtuple
 from hashlib import md5
+from urllib.parse import urlparse
 from urllib.request import urlopen
 from urllib.error import HTTPError
 from xml.dom.minidom import getDOMImplementation, parseString
@@ -58,6 +59,73 @@ class BPPConnection(object):
 
 	def addRecord(self, program, component, version):
 		self.records.append(Record(program, component, version))
+
+
+class BlizzardCSV(object):
+	def __init__(self, text):
+		self.text = text
+		rows = text.strip().splitlines()
+		self.header = rows[0].split("|")
+		self.rows =[c.split("|") for c in rows[1:]]
+		self.column_names = [c.split("!")[0].lower() for c in self.header]
+
+	def get(self, row, column):
+		column = column.lower()
+		index = self.column_names.index(column)
+		return row[index]
+
+
+class NGDPConnection(object):
+	def __init__(self, server, save_path):
+		self.server = server
+		self.save_path = save_path
+		self.base_path = None
+
+		self.cdn = None
+		self._cache = {}
+
+	def _cached_csv(self, path):
+		if path not in self._cache:
+			self._cache[path] = BlizzardCSV(self._query(path).text)
+		return self._cache[path]
+
+	def _query(self, path):
+		r = requests.get(self.server + path)
+		return r
+
+	def blobs(self):
+		return self._cached_csv("/blobs")
+
+	def cdns(self):
+		return self._cached_csv("/cdns")
+
+	def versions(self):
+		return self._cached_csv("/versions")
+
+	def blob_install(self):
+		return self._query("/blob/install")
+
+	def blob_game(self):
+		return self._query("/blob/game")
+
+	def cache_hash(self, hash, type):
+		path = os.path.join(self.base_path, _hash(hash))
+		if not os.path.exists(path):
+			_prep_dir_for(path)
+			r = requests.get(self.get_url(hash, type))
+			assert md5(r.content).hexdigest() == hash
+			with open(path, "wb") as f:
+				print("Downloading %r to %r" % (r.url, path))
+				f.write(r.content)
+
+		return path
+
+	def get_url(self, hash, type):
+		return "%s/%s/%s" % (self.cdn, type, _hash(hash))
+
+	def set_cdn(self, host, path, scheme="http"):
+		self.cdn = "%s://%s/%s" % (scheme, host, path)
+		self.base_path = os.path.join(self.save_path, "NGDP", path)
 
 
 class ConfigurationError(Exception):
@@ -211,7 +279,6 @@ class Blob(Resource):
 
 	def url(self):
 		return self.base + self.name()
-
 
 
 def _hash(hash):
