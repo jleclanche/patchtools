@@ -209,6 +209,9 @@ def main():
 
 	records += ptrMac.open("http://public-test.patch.battle.net:1119/patch")
 
+	# Set a default CDN
+	cdn = "dist.blizzard.com.edgesuite.net"
+
 	for record in records:
 		print("%s->%s" % (record.program, record.component))
 
