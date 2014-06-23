@@ -139,9 +139,11 @@ class NGDPConnection(object):
 		if not os.path.exists(path):
 			_prep_dir_for(path)
 			r = requests.get(self.get_url(hash, type))
-			assert md5(r.content).hexdigest() == hash
+			print("Downloaded %r" % (r.url))
+			content_md5 = md5(r.content).hexdigest()
+			if content_md5 != hash:
+				print("WARNING: md5 hash for %r do not match: %r" % (hash, content_md5))
 			with open(path, "wb") as f:
-				print("Downloading %r to %r" % (r.url, path))
 				f.write(r.content)
 
 		return path
