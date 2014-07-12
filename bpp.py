@@ -5,10 +5,14 @@ Blizzard patching protocol
 
 import json
 import os
+import struct
 import requests
 import simplestore
+from binascii import hexlify
 from collections import namedtuple
 from hashlib import md5
+from io import BytesIO
+from math import ceil
 from urllib.parse import urlparse
 from urllib.request import urlopen
 from urllib.error import HTTPError
@@ -126,23 +130,81 @@ class NGDPConnection(object):
 				with open(path, "r") as f:
 					return simplestore.load(f)
 
+	def _data_md5(self, data):
+		h = data.read(8)
+		magic, header_size = struct.unpack(">4si", h)
+		assert magic == b"BLTE", repr(magic)
+		h += data.read(header_size-8)
+		return md5(h).hexdigest()
+
 	def build_config(self, region="xx"):
 		return self._get_config(region, "buildconfig")
 
 	def cdn_config(self, region="xx"):
 		return self._get_config(region, "cdnconfig")
 
+	def cache_data_index(self, hash):
+		assert self.cdn
+		assert self.base_path
+		url, path = self.get_paths(hash, "index")
+		if not os.path.exists(path):
+			_prep_dir_for(path)
+			r = requests.get(url)
+			assert r.status_code == 200
+
+			# calculate the .index md5
+			data = BytesIO(r.content)
+			data.seek(-12, os.SEEK_END)
+			entries, = struct.unpack("i", data.read(4))
+			blocks = ceil(entries / 170)
+			blocks_len = blocks * 24
+
+			data.seek(-28 - blocks_len, os.SEEK_END)
+			index_hash = md5(data.read(blocks_len)).digest()
+			hash_chk = data.read(8)
+			# We only deal with 8 byte md5
+			assert index_hash[:8] == hash_chk, "%r != %r" % (index_hash[:8], hash_chk)
+
+			data.seek(0)
+			for i in range(blocks):
+				block_hash = md5(data.read(4096)).digest()
+				pos = data.tell()
+				data.seek(blocks * (4096+16) + i*8)
+				hash_chk = data.read(8)
+				assert block_hash[:8] == hash_chk, "%r != %r for block %r" % (block_hash[:8], hash_chk, i)
+				data.seek(pos)
+
+			# Write the file now
+			with open(path, "wb") as f:
+				print("Writing to %r" % (path))
+				f.write(r.content)
+
 	def cache_hash(self, hash, type):
 		assert self.cdn
 		assert self.base_path
-		path = os.path.join(self.base_path, _hash(hash))
+		url, path = self.get_paths(hash, type)
+		if type == "data":
+			index = self.cache_data_index(hash)
 		if not os.path.exists(path):
 			_prep_dir_for(path)
-			r = requests.get(self.get_url(hash, type))
-			print("Downloaded %r" % (r.url))
-			content_md5 = md5(r.content).hexdigest()
-			if content_md5 != hash:
-				print("WARNING: md5 hash for %r do not match: %r" % (hash, content_md5))
+			print("Downloading %r" % (url))
+			r = requests.get(url)
+			if r.status_code != 200:
+				print("Got HTTP %r" % (r.status_code))
+				return None
+
+			if type == "data":
+				...
+				# download the .index file too
+
+				#content_hash = self._data_md5(BytesIO(r.content))
+				#if hash != content_hash:
+				#	print("%r != %r" % (hash, content_hash))
+
+			elif type == "config":
+				content_hash = md5(r.content).hexdigest()
+				assert hash == content_hash
+
 			with open(path, "wb") as f:
 				f.write(r.content)
 
