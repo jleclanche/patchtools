@@ -210,6 +210,7 @@ class NGDPConnection(object):
 				assert hash == content_hash
 
 			with open(path, "wb") as f:
+				print("Writing to %r" % (path))
 				f.write(r.content)
 
 		return path
