@@ -72,8 +72,8 @@ class BlizzardCSV(object):
 	def __init__(self, text):
 		self.text = text
 		rows = text.strip().splitlines()
-		self.header = rows[0].split("|")
-		self.rows =[c.split("|") for c in rows[1:]]
+		self.header = rows[0].split("|") if rows else []
+		self.rows = [c.split("|") for c in rows[1:]]
 		self.column_names = [c.split("!")[0].lower() for c in self.header]
 
 	def get(self, row, column):
@@ -118,6 +118,7 @@ class NGDPConnection(object):
 	def _get_config(self, region, column):
 		if not self.cdn:
 			cdns = self.cdns()
+			assert cdns.rows, repr(cdns.text)
 			host = cdns.get(cdns.rows[0], "hosts")
 			path = cdns.get(cdns.rows[0], "path")
 			self.set_cdn(host, path)
@@ -127,6 +128,9 @@ class NGDPConnection(object):
 			if versions.get(row, "region") == region:
 				hash = versions.get(row, column)
 				path = self.cache_hash(hash, type="config")
+				if path is None:
+					print("WARNING: %r missing. Ignoring..." % (hash))
+					continue
 				with open(path, "r") as f:
 					return simplestore.load(f)
 
