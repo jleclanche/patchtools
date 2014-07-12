@@ -389,6 +389,10 @@ def _prep_dir_for(filename):
 
 class BaseCatalog(object):
 	def __init__(self, server, path, hash, region_code, save_path, scheme="http"):
+		if path.startswith("http://"):
+			# Support for old catalogs
+			path = urlparse(path).path[1:].lstrip("/")
+
 		self.server = server
 		self.path = path
 		self.scheme = scheme
