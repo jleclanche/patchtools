@@ -214,8 +214,14 @@ class NGDPConnection(object):
 
 		return path
 
-	def get_url(self, hash, type):
-		return "%s/%s/%s" % (self.cdn, type, _hash(hash))
+	def get_paths(self, hash, type):
+		if type == "index":
+			url = "%s/%s/%s.index" % (self.cdn, "data", _hash(hash))
+			path = os.path.join(self.base_path, _hash(hash) + ".index")
+		else:
+			url = "%s/%s/%s" % (self.cdn, type, _hash(hash))
+			path = os.path.join(self.base_path, _hash(hash))
+		return url, path
 
 	def set_cdn(self, host, path, scheme="http"):
 		self.cdn = "%s://%s/%s" % (scheme, host, path)
@@ -406,7 +412,7 @@ class BaseCatalog(object):
 		return self.root.__str__()
 
 	def __repr__(self):
-		return "<LazyCatalog at %r>" % (self.get_url(self.hash))
+		return "<LazyCatalog at %r>" % (self.get_paths(self.hash)[0])
 
 	@property
 	def root(self):
@@ -415,10 +421,10 @@ class BaseCatalog(object):
 		return self._root
 
 	def cache(self, hash):
-		path = os.path.join(self.base_path, _hash(hash))
+		url, path = self.get_paths(hash)
 		if not os.path.exists(path):
 			_prep_dir_for(path)
-			r = requests.get(self.get_url(hash))
+			r = requests.get(url)
 			assert md5(r.content).hexdigest() == hash
 			with open(path, "wb") as f:
 				print("Downloading %r to %r" % (r.url, path))
@@ -431,8 +437,10 @@ class BaseCatalog(object):
 		with open(path, "r") as f:
 			return json.load(f)
 
-	def get_url(self, hash):
-		return "%s://%s/%s/%s" % (self.scheme, self.server, self.path, _hash(hash))
+	def get_paths(self, hash):
+		url = "%s://%s/%s/%s" % (self.scheme, self.server, self.path, _hash(hash))
+		path = os.path.join(self.base_path, _hash(hash))
+		return url, path
 
 	def preload(self):
 		# Cache the root hash by just accessing it
@@ -445,7 +453,7 @@ class Catalog(BaseCatalog):
 		super().__init__(*args, **kwargs)
 
 	def __repr__(self):
-		return "<Catalog at %r>" % (self.get_url(self.hash))
+		return "<Catalog at %r>" % (self.get_paths(self.hash)[0])
 
 	@property
 	def regions(self):
