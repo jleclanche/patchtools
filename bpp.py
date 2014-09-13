@@ -218,10 +218,10 @@ class NGDPConnection(object):
 	def get_paths(self, hash, type):
 		if type == "index":
 			url = "%s/%s/%s.index" % (self.cdn, "data", _hash(hash))
-			path = os.path.join(self.base_path, _hash(hash) + ".index")
+			path = os.path.join(self.base_path, "data", _hash(hash) + ".index")
 		else:
 			url = "%s/%s/%s" % (self.cdn, type, _hash(hash))
-			path = os.path.join(self.base_path, _hash(hash))
+			path = os.path.join(self.base_path, type, _hash(hash))
 		return url, path
 
 	def set_cdn(self, host, path, scheme="http"):
