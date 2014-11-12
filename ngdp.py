@@ -112,6 +112,9 @@ if __name__ == "__main__":
 			buildconfig = ngdp.build_config(region="xx")
 			cdnconfig = ngdp.cdn_config(region="xx")
 
+			if "archives" not in cdnconfig:
+				print("WARNING: No archives in %r" % (cdnconfig))
+				continue
 			for archive in cdnconfig["archives"]:
 				ngdp.cache_hash(archive, type="data")
 
