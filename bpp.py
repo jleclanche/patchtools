@@ -81,6 +81,12 @@ class BlizzardCSV(object):
 		index = self.column_names.index(column)
 		return row[index]
 
+	def __str__(self):
+		header = "|".join(self.header)
+		rows = ["|".join(row) for row in self.rows]
+		rows = "\n".join(rows)
+		return header + "\n" + rows
+
 
 class NGDPConnection(object):
 	def __init__(self, server, save_path):
