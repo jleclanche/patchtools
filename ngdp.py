@@ -8,16 +8,22 @@ import re
 from urllib.parse import urlparse
 from bpp import NGDPConnection, BPPConnection, Catalog
 
+logging.basicConfig(level=logging.DEBUG)
+
 USER_AGENT = "NGDP12"
 MPQ_BASE_DIR = os.environ.get("MPQ_BASE_DIR", os.path.join(os.environ.get("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share")), "mpq"))
 MD5_REGEX = re.compile(r"[0-9a-f]{32}", re.I)
 
 
 def get_catalog(version):
-	conn = BPPConnection(program="ngdp")
+	conn = BPPConnection(program="Clog")
 	conn.addRecord(program="Clog", component="PUB", version=str(version))
 	conn.addRecord(program="Agnt", component="cdn", version="1")
-	records = conn.open("http://public-test.patch.battle.net:1119/patch")
+	conn.addRecord(program="Agnt", component="Win", version="1")
+	#records = conn.open("http://public-test.patch.battle.net:1119/patch")
+	url = "http://eu.patch.battle.net:1119/patch"
+	logging.info("Getting catalog at %r", url)
+	records = conn.open(url)
 	cdns = []
 	path, hash = "", ""
 	for record in records:
@@ -65,7 +71,7 @@ if __name__ == "__main__":
 	if len(sys.argv) > 1:
 		version = sys.argv[1]
 	else:
-		version = 14
+		version = 16
 	catalog = get_catalog(version)
 	# Old catalogs:
 	# catalog = Catalog("dist.blizzard.com.edgesuite.net", "tools-pod/bna/cache", "45743849d79f0d8b21c4a15d24784d4f")
@@ -109,9 +115,16 @@ if __name__ == "__main__":
 			logging.info("Initializing new NGDP Connection for %r: %r", product, server)
 			ngdp = NGDPConnection(server, save_path=MPQ_BASE_DIR)
 
-			# XXX Will there be more versions once stuff comes out of beta?
-			buildconfig = ngdp.build_config(region="xx")
-			cdnconfig = ngdp.cdn_config(region="xx")
+			regions = ngdp.regions
+			try:
+				buildconfig = ngdp.build_config(region=regions[0])
+			except AssertionError as e:
+				if product != "prometheus":
+					raise
+				else:
+					logging.error("Hash failing? %r", e)
+					continue
+			cdnconfig = ngdp.cdn_config(region=regions[0])
 
 			if "archives" not in cdnconfig:
 				logging.warn("No archives in %r", cdnconfig)
