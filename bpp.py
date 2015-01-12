@@ -126,6 +126,11 @@ class NGDPConnection(object):
 	def blob_game(self):
 		return self._query("/blob/game")
 
+	@property
+	def regions(self):
+		versions = self.versions
+		return [versions.get(row, "region") for row in versions.rows]
+
 	def _get_config(self, region, column):
 		if not self.cdn:
 			cdns = self.cdns
