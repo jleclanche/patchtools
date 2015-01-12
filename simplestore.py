@@ -4,7 +4,7 @@ from io import StringIO
 def load(file):
 	ret = {}
 	while True:
-		line = file.readline().strip()
+		line = file.readline()
 		if line.startswith("#"):
 			# comment
 			continue
@@ -12,6 +12,11 @@ def load(file):
 		if not line:
 			# end of file
 			break
+
+		line = line.strip()
+		if not line:
+			# blank line
+			continue
 
 		assert line.count("=") == 1
 		if line.endswith("="):
