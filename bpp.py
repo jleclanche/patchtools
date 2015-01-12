@@ -4,6 +4,7 @@ Blizzard patching protocol
 """
 
 import json
+import logging
 import os
 import struct
 import requests
@@ -22,6 +23,7 @@ from xml.parsers.expat import ExpatError
 
 Record = namedtuple("Record", ("program", "component", "version"))
 ResponseRecord = namedtuple("Record", ("program", "component", "text"))
+logging.basicConfig(level=logging.DEBUG)
 
 
 class ServerError(Exception):
@@ -47,6 +49,7 @@ class BPPConnection(object):
 
 	def open(self, server):
 		xml = self.getXML()
+		logging.debug("Posting XML to %r: %r", server, xml)
 
 		try:
 			f = urlopen(server, xml)
@@ -137,7 +140,7 @@ class NGDPConnection(object):
 			assert cdns.rows, repr(cdns.text)
 			hosts = cdns.get(cdns.rows[0], "hosts").split()
 			path = cdns.get(cdns.rows[0], "path")
-			print("Defaulting CDN host to %r (choices: %r)" % (hosts[0], hosts))
+			logging.info("Defaulting CDN host to %r (choices: %r)", hosts[0], hosts)
 			self.set_cdn(hosts[0], path)
 
 		versions = self.versions
@@ -146,7 +149,7 @@ class NGDPConnection(object):
 				hash = versions.get(row, column)
 				path = self.cache_hash(hash, type="config")
 				if path is None:
-					print("WARNING: %r missing. Ignoring..." % (hash))
+					logging.warn("WARNING: %r missing. Ignoring..." % (hash))
 					continue
 				with open(path, "r") as f:
 					return simplestore.load(f)
@@ -171,7 +174,7 @@ class NGDPConnection(object):
 		if not os.path.exists(path):
 			_prep_dir_for(path)
 			r = requests.get(url)
-			assert r.status_code == 200
+			assert r.status_code == 200, r.status_code
 
 			# calculate the .index md5
 			data = BytesIO(r.content)
@@ -197,7 +200,7 @@ class NGDPConnection(object):
 
 			# Write the file now
 			with open(path, "wb") as f:
-				print("Writing to %r" % (path))
+				logging.info("Writing to %r", path)
 				f.write(r.content)
 
 	def cache_hash(self, hash, type):
@@ -208,10 +211,10 @@ class NGDPConnection(object):
 			index = self.cache_data_index(hash)
 		if not os.path.exists(path):
 			_prep_dir_for(path)
-			print("Downloading %r" % (url))
+			logging.info("Downloading %r", url)
 			r = requests.get(url)
 			if r.status_code != 200:
-				print("Got HTTP %r" % (r.status_code))
+				logging.error("Got HTTP %r", r.status_code)
 				return None
 
 			if type == "data":
@@ -227,7 +230,7 @@ class NGDPConnection(object):
 				assert hash == content_hash
 
 			with open(path, "wb") as f:
-				print("Writing to %r" % (path))
+				logging.info("Writing to %r", path)
 				f.write(r.content)
 
 		return path
@@ -359,7 +362,7 @@ class Resource(object):
 		with open(path, "wb") as f:
 			data = self.data()
 			f.write(data)
-			print("Written %i bytes to %s" % (len(data), path))
+			logging.info("Written %i bytes to %s", len(data), path)
 
 
 class SimpleResource(Resource):
@@ -445,7 +448,7 @@ class BaseCatalog(object):
 			r = requests.get(url)
 			assert md5(r.content).hexdigest() == hash
 			with open(path, "wb") as f:
-				print("Downloading %r to %r" % (r.url, path))
+				logging.info("Downloading %r to %r", r.url, path)
 				f.write(r.content)
 
 		return path
@@ -485,13 +488,13 @@ class Catalog(BaseCatalog):
 			catalog.preload()
 
 		if "manifest" not in self.root:
-			print("WARNING: No manifest found. Old catalog?")
+			logging.warning("No manifest found. Old catalog?")
 			return
 
 		for filename, resource in self.root["manifest"]["lookup"].items():
 			path = self.cache(resource)
 			link_path = os.path.join(self.save_path, "Clog", filename)
 			if not os.path.exists(link_path):
-				print("Linking %r -> %r" % (path, link_path))
+				logging.info("Linking %r -> %r" % (path, link_path))
 				_prep_dir_for(link_path)
 				os.symlink(path, link_path)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import logging
 import requests
 import hashlib
 import os
@@ -43,9 +44,9 @@ def cache_old(url):
 
 	r = requests.get(url)
 	if r.status_code == 404:
-		print("Not found: %r" % (r.url))
+		logging.error("Not found: %r", r.url)
 		return
-	print("%r -> %r" % (url, full_path))
+	logging.debug("%r -> %r", url, full_path)
 
 	assert r.status_code == 200, r.url
 
@@ -73,7 +74,6 @@ if __name__ == "__main__":
 	# catalog = Catalog("dist.blizzard.com.edgesuite.net", "tools-pod/bna/cache", "d0cb714772d51f35bf96475ea120a7a2")
 	# catalog = Catalog("dist.blizzard.com.edgesuite.net", "tools-pod/bna/cache", "e8abcaca9b130e806c4baed122d4385c")
 
-	print(repr(catalog))
 	catalog.preload()
 
 	for lang, clog in catalog.regions.items():
@@ -106,6 +106,7 @@ if __name__ == "__main__":
 			if server.endswith(":1119/patch"):
 				# "Skipping old patch system
 				continue
+			logging.info("Initializing new NGDP Connection for %r: %r", product, server)
 			ngdp = NGDPConnection(server, save_path=MPQ_BASE_DIR)
 
 			# XXX Will there be more versions once stuff comes out of beta?
@@ -113,7 +114,7 @@ if __name__ == "__main__":
 			cdnconfig = ngdp.cdn_config(region="xx")
 
 			if "archives" not in cdnconfig:
-				print("WARNING: No archives in %r" % (cdnconfig))
+				logging.warn("No archives in %r", cdnconfig)
 				continue
 			for archive in cdnconfig["archives"]:
 				ngdp.cache_hash(archive, type="data")
