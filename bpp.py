@@ -125,9 +125,10 @@ class NGDPConnection(object):
 		if not self.cdn:
 			cdns = self.cdns()
 			assert cdns.rows, repr(cdns.text)
-			host = cdns.get(cdns.rows[0], "hosts")
+			hosts = cdns.get(cdns.rows[0], "hosts").split()
 			path = cdns.get(cdns.rows[0], "path")
-			self.set_cdn(host, path)
+			print("Defaulting CDN host to %r (choices: %r)" % (hosts[0], hosts))
+			self.set_cdn(hosts[0], path)
 
 		versions = self.versions()
 		for row in versions.rows:
