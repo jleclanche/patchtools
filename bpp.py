@@ -106,31 +106,36 @@ class NGDPConnection(object):
 		r = requests.get(self.server + path)
 		return r
 
+	@property
 	def blobs(self):
 		return self._cached_csv("/blobs")
 
+	@property
 	def cdns(self):
 		return self._cached_csv("/cdns")
 
+	@property
 	def versions(self):
 		return self._cached_csv("/versions")
 
+	@property
 	def blob_install(self):
 		return self._query("/blob/install")
 
+	@property
 	def blob_game(self):
 		return self._query("/blob/game")
 
 	def _get_config(self, region, column):
 		if not self.cdn:
-			cdns = self.cdns()
+			cdns = self.cdns
 			assert cdns.rows, repr(cdns.text)
 			hosts = cdns.get(cdns.rows[0], "hosts").split()
 			path = cdns.get(cdns.rows[0], "path")
 			print("Defaulting CDN host to %r (choices: %r)" % (hosts[0], hosts))
 			self.set_cdn(hosts[0], path)
 
-		versions = self.versions()
+		versions = self.versions
 		for row in versions.rows:
 			if versions.get(row, "region") == region:
 				hash = versions.get(row, column)
