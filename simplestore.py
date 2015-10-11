@@ -34,4 +34,3 @@ def load(file):
 
 def loads(text):
 	return load(StringIO(text))
-

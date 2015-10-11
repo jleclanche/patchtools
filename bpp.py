@@ -154,6 +154,8 @@ class NGDPConnection(object):
 				with open(path, "r") as f:
 					return simplestore.load(f)
 
+		return {}
+
 	def _data_md5(self, data):
 		h = data.read(8)
 		magic, header_size = struct.unpack(">4si", h)
@@ -212,7 +214,12 @@ class NGDPConnection(object):
 		if not os.path.exists(path):
 			_prep_dir_for(path)
 			logging.info("Downloading %r", url)
-			r = requests.get(url)
+			try:
+				r = requests.get(url)
+			except Exception:
+				logging.exception("Got exception while trying to resolve %r", url)
+				return None
+
 			if r.status_code != 200:
 				logging.error("Got HTTP %r", r.status_code)
 				return None
